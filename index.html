@@ -11,6 +11,12 @@
     --primary: #3b82f6; --green: #10b981; --red: #ef4444;
     --yellow: #f59e0b; --radius: 12px;
   }
+  /* TEMAS */
+  .tema-azul   { --primary: #3b82f6; }
+  .tema-roxo   { --primary: #8b5cf6; --bg: #0f0a1e; --surface: #1a1230; --surface2: #241a3f; --border: #352a55; }
+  .tema-verde  { --primary: #10b981; --bg: #0a1a14; --surface: #0f2419; --surface2: #163022; --border: #1e4030; }
+  .tema-laranja{ --primary: #f59e0b; --bg: #1a1200; --surface: #251a00; --surface2: #302200; --border: #453300; }
+  .tema-claro  { --bg: #f8fafc; --surface: #ffffff; --surface2: #f1f5f9; --border: #e2e8f0; --text: #0f172a; --muted: #64748b; --primary: #3b82f6; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; min-height: 100vh; }
 
@@ -151,9 +157,13 @@
 <div class="main">
   <div class="topbar">
     <div class="topbar-title" id="topbar-title">Dashboard</div>
-    <div class="flex gap8">
+    <div class="flex gap8" style="align-items:center;">
       <span id="topbar-mes" class="muted" style="font-size:13px;"></span>
       <button class="btn btn-ghost btn-sm" onclick="compartilharResumo()" title="Compartilhar resumo do mês">📤 Compartilhar</button>
+      <div id="topbar-user" style="display:flex;align-items:center;gap:8px;margin-left:4px;cursor:pointer;" onclick="goTo('configuracoes')">
+        <div id="topbar-avatar" style="width:32px;height:32px;border-radius:50%;background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0;"></div>
+        <span id="topbar-nome" style="font-size:13px;font-weight:500;"></span>
+      </div>
     </div>
   </div>
 
@@ -270,25 +280,88 @@
     <div class="page" id="page-configuracoes">
       <div class="page-header">
         <div class="page-title">Configurações</div>
-        <div class="page-sub">Perfil do caminhão</div>
+        <div class="page-sub">Perfil, caminhão e aparência</div>
       </div>
-      <div class="card" style="max-width:480px;">
-        <div class="card-title fw600" style="font-size:14px;color:var(--text);margin-bottom:16px;">Perfil do caminhão</div>
-        <div class="form-grid">
-          <div class="field">
-            <label>Consumo médio (km/L)</label>
-            <input type="number" id="cfg-kml" placeholder="Ex: 3.5" step="0.1" min="0">
-            <span style="font-size:12px;color:var(--muted);margin-top:4px;">Mostrado no dashboard e usado para estimar diesel por corrida</span>
-          </div>
-          <div class="field" style="margin-top:8px;">
-            <label>Chave QualP (pedágio) <span class="muted" style="font-weight:400;">— precisa do backend ativo</span></label>
-            <input type="text" id="cfg-qualp" placeholder="Sua chave da API QualP">
-            <span style="font-size:12px;color:var(--muted);margin-top:4px;">Solicitar em qualp.com.br — funciona após deploy do backend</span>
+      <div style="display:flex;flex-direction:column;gap:16px;max-width:520px;">
+
+        <!-- PERFIL -->
+        <div class="card">
+          <div class="card-title fw600" style="font-size:14px;color:var(--text);margin-bottom:16px;">👤 Perfil</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Nome de exibição</label>
+              <input type="text" id="cfg-nome" placeholder="Ex: João Silva">
+            </div>
+            <div class="field">
+              <label>Telefone (WhatsApp)</label>
+              <input type="tel" id="cfg-telefone" placeholder="(11) 99999-9999">
+            </div>
           </div>
         </div>
-        <div class="form-actions" style="margin-top:16px;">
-          <button class="btn btn-primary" onclick="salvarConfiguracoes()">Salvar</button>
+
+        <!-- CAMINHÃO -->
+        <div class="card">
+          <div class="card-title fw600" style="font-size:14px;color:var(--text);margin-bottom:16px;">🚛 Caminhão</div>
+          <div class="form-grid">
+            <div class="form-grid form-grid-2">
+              <div class="field">
+                <label>Modelo</label>
+                <input type="text" id="cfg-modelo" placeholder="Ex: Scania R450">
+              </div>
+              <div class="field">
+                <label>Placa</label>
+                <input type="text" id="cfg-placa" placeholder="Ex: ABC-1234" style="text-transform:uppercase;">
+              </div>
+            </div>
+            <div class="form-grid form-grid-2">
+              <div class="field">
+                <label>Tipo de carroceria</label>
+                <select id="cfg-carroceria">
+                  <option value="">Selecionar...</option>
+                  <option>Graneleiro</option>
+                  <option>Baú</option>
+                  <option>Tanque</option>
+                  <option>Frigorífico</option>
+                  <option>Plataforma</option>
+                  <option>Sider</option>
+                  <option>Caçamba</option>
+                  <option>Outro</option>
+                </select>
+              </div>
+              <div class="field">
+                <label>Consumo médio (km/L)</label>
+                <input type="number" id="cfg-kml" placeholder="Ex: 3.5" step="0.1" min="0">
+              </div>
+            </div>
+          </div>
         </div>
+
+        <!-- APARÊNCIA -->
+        <div class="card">
+          <div class="card-title fw600" style="font-size:14px;color:var(--text);margin-bottom:16px;">🎨 Aparência</div>
+          <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Tema do app</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:10px;" id="tema-grid">
+            <div class="tema-btn" data-tema="azul"    style="background:#1e293b;border:2px solid #3b82f6;border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;font-size:12px;">🔵<br>Azul</div>
+            <div class="tema-btn" data-tema="roxo"    style="background:#1a1230;border:2px solid #8b5cf6;border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;font-size:12px;">🟣<br>Roxo</div>
+            <div class="tema-btn" data-tema="verde"   style="background:#0f2419;border:2px solid #10b981;border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;font-size:12px;">🟢<br>Verde</div>
+            <div class="tema-btn" data-tema="laranja" style="background:#251a00;border:2px solid #f59e0b;border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;font-size:12px;">🟡<br>Laranja</div>
+            <div class="tema-btn" data-tema="claro"   style="background:#f8fafc;border:2px solid #94a3b8;border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;font-size:12px;color:#0f172a;">☀️<br>Claro</div>
+          </div>
+        </div>
+
+        <!-- INTEGRAÇÕES -->
+        <div class="card">
+          <div class="card-title fw600" style="font-size:14px;color:var(--text);margin-bottom:16px;">🔑 Integrações</div>
+          <div class="form-grid">
+            <div class="field">
+              <label>Chave QualP (pedágio) <span class="muted" style="font-weight:400;">— ativa após backend</span></label>
+              <input type="text" id="cfg-qualp" placeholder="Chave da API QualP">
+              <span style="font-size:12px;color:var(--muted);margin-top:4px;">qualp.com.br → calcular pedágio automaticamente</span>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" style="align-self:flex-start;" onclick="salvarConfiguracoes()">Salvar alterações</button>
       </div>
     </div>
 
@@ -418,6 +491,18 @@ const DB = {
   set kmL(v) { localStorage.setItem('fp_kml', String(v)) },
   get qualPKey() { return localStorage.getItem('fp_qualp_key') || '' },
   set qualPKey(v) { localStorage.setItem('fp_qualp_key', v); CONFIG.QUALP_KEY = v },
+  get nome() { return localStorage.getItem('fp_nome') || '' },
+  set nome(v) { localStorage.setItem('fp_nome', v) },
+  get telefone() { return localStorage.getItem('fp_telefone') || '' },
+  set telefone(v) { localStorage.setItem('fp_telefone', v) },
+  get modelo() { return localStorage.getItem('fp_modelo') || '' },
+  set modelo(v) { localStorage.setItem('fp_modelo', v) },
+  get placa() { return localStorage.getItem('fp_placa') || '' },
+  set placa(v) { localStorage.setItem('fp_placa', v) },
+  get carroceria() { return localStorage.getItem('fp_carroceria') || '' },
+  set carroceria(v) { localStorage.setItem('fp_carroceria', v) },
+  get tema() { return localStorage.getItem('fp_tema') || 'azul' },
+  set tema(v) { localStorage.setItem('fp_tema', v) },
   get viagemAtiva() { return DB.viagens.find(v => v.status === 'EM_ANDAMENTO') || null },
   custoViagem(v) {
     const desc = parseMoney(v.descontosNota || 0)
@@ -1012,19 +1097,54 @@ function compartilharResumo() {
 }
 
 // ==================== CONFIGURAÇÕES ====================
-function renderConfiguracoes() {
-  document.getElementById('cfg-kml').value = DB.kmL || ''
-  document.getElementById('cfg-qualp').value = DB.qualPKey || ''
+function aplicarTema(t) {
+  document.body.className = document.body.className.replace(/tema-\S+/g, '').trim()
+  if (t !== 'azul') document.body.classList.add('tema-' + t)
+  document.querySelectorAll('.tema-btn').forEach(btn => {
+    btn.style.opacity = btn.dataset.tema === t ? '1' : '0.45'
+    btn.style.transform = btn.dataset.tema === t ? 'scale(1.06)' : 'scale(1)'
+  })
 }
+
+function renderConfiguracoes() {
+  document.getElementById('cfg-nome').value      = DB.nome
+  document.getElementById('cfg-telefone').value  = DB.telefone
+  document.getElementById('cfg-modelo').value    = DB.modelo
+  document.getElementById('cfg-placa').value     = DB.placa
+  document.getElementById('cfg-carroceria').value= DB.carroceria
+  document.getElementById('cfg-kml').value       = DB.kmL || ''
+  document.getElementById('cfg-qualp').value     = DB.qualPKey
+  aplicarTema(DB.tema)
+  document.querySelectorAll('.tema-btn').forEach(btn => {
+    btn.onclick = () => { DB.tema = btn.dataset.tema; aplicarTema(btn.dataset.tema) }
+  })
+}
+
 function salvarConfiguracoes() {
-  const kml = parseFloat(document.getElementById('cfg-kml').value) || 0
-  DB.kmL = kml
-  DB.qualPKey = document.getElementById('cfg-qualp').value.trim()
+  DB.nome      = document.getElementById('cfg-nome').value.trim()
+  DB.telefone  = document.getElementById('cfg-telefone').value.trim()
+  DB.modelo    = document.getElementById('cfg-modelo').value.trim()
+  DB.placa     = document.getElementById('cfg-placa').value.trim().toUpperCase()
+  DB.carroceria= document.getElementById('cfg-carroceria').value
+  DB.kmL       = parseFloat(document.getElementById('cfg-kml').value) || 0
+  DB.qualPKey  = document.getElementById('cfg-qualp').value.trim()
+  atualizarTopbarUser()
   toast('Configurações salvas!')
   renderDashboard()
 }
 
+function atualizarTopbarUser() {
+  const nome = DB.nome || 'Motorista'
+  const inicial = nome.charAt(0).toUpperCase()
+  const el = document.getElementById('topbar-avatar')
+  const elNome = document.getElementById('topbar-nome')
+  if (el) el.textContent = inicial
+  if (elNome) elNome.textContent = nome.split(' ')[0]
+}
+
 // ==================== INIT ====================
+aplicarTema(DB.tema)
+atualizarTopbarUser()
 document.getElementById('topbar-mes').textContent = ''
 renderDashboard()
 </script>
