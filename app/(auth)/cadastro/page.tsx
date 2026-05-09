@@ -1,10 +1,11 @@
 'use client'
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
 export default function CadastroPage() {
+  const searchParams = useSearchParams()
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
@@ -12,6 +13,11 @@ export default function CadastroPage() {
   const [erro, setErro] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    const c = searchParams.get('codigo') || searchParams.get('promo')
+    if (c) setCodigo(c.toUpperCase())
+  }, [searchParams])
 
   async function handleCadastro(e: React.FormEvent) {
     e.preventDefault()
