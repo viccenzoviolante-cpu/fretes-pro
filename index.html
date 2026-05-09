@@ -349,16 +349,11 @@
           </div>
         </div>
 
-        <!-- INTEGRAÇÕES -->
+        <!-- SUPORTE -->
         <div class="card">
-          <div class="card-title fw600" style="font-size:14px;color:var(--text);margin-bottom:16px;">🔑 Integrações</div>
-          <div class="form-grid">
-            <div class="field">
-              <label>Chave QualP (pedágio) <span class="muted" style="font-weight:400;">— ativa após backend</span></label>
-              <input type="text" id="cfg-qualp" placeholder="Chave da API QualP">
-              <span style="font-size:12px;color:var(--muted);margin-top:4px;">qualp.com.br → calcular pedágio automaticamente</span>
-            </div>
-          </div>
+          <div class="card-title fw600" style="font-size:14px;color:var(--text);margin-bottom:16px;">💬 Suporte</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Dúvidas ou problemas? Fale direto com a gente.</p>
+          <a href="https://wa.me/5511999999999?text=Oi,%20preciso%20de%20ajuda%20com%20o%20FretesPro" target="_blank" class="btn btn-ghost btn-sm">💬 Chamar no WhatsApp</a>
         </div>
 
         <button class="btn btn-primary" style="align-self:flex-start;" onclick="salvarConfiguracoes()">Salvar alterações</button>
@@ -1113,7 +1108,6 @@ function renderConfiguracoes() {
   document.getElementById('cfg-placa').value     = DB.placa
   document.getElementById('cfg-carroceria').value= DB.carroceria
   document.getElementById('cfg-kml').value       = DB.kmL || ''
-  document.getElementById('cfg-qualp').value     = DB.qualPKey
   aplicarTema(DB.tema)
   document.querySelectorAll('.tema-btn').forEach(btn => {
     btn.onclick = () => { DB.tema = btn.dataset.tema; aplicarTema(btn.dataset.tema) }
@@ -1127,7 +1121,6 @@ function salvarConfiguracoes() {
   DB.placa     = document.getElementById('cfg-placa').value.trim().toUpperCase()
   DB.carroceria= document.getElementById('cfg-carroceria').value
   DB.kmL       = parseFloat(document.getElementById('cfg-kml').value) || 0
-  DB.qualPKey  = document.getElementById('cfg-qualp').value.trim()
   atualizarTopbarUser()
   toast('Configurações salvas!')
   renderDashboard()
