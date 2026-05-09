@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FretesPro</title>
+<style>
+  :root {
+    --bg: #0f172a; --surface: #1e293b; --surface2: #273549;
+    --border: #334155; --text: #f1f5f9; --muted: #94a3b8;
+    --primary: #3b82f6; --green: #10b981; --red: #ef4444;
+    --yellow: #f59e0b; --radius: 12px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar { width: 220px; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; padding: 20px 12px; gap: 4px; flex-shrink: 0; }
+  .brand { display: flex; align-items: center; gap: 10px; padding: 8px 12px 20px; font-weight: 700; font-size: 17px; }
+  .brand-dot { width: 28px; height: 28px; background: var(--primary); border-radius: 8px; }
+  .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 14px; color: var(--muted); transition: all .15s; border: none; background: none; width: 100%; text-align: left; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: var(--primary)22; color: var(--primary); font-weight: 600; }
+  .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+
+  /* MAIN */
+  .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+  .topbar { background: var(--surface); border-bottom: 1px solid var(--border); padding: 14px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .topbar-title { font-size: 15px; font-weight: 600; }
+  .content { flex: 1; overflow-y: auto; padding: 24px; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-header { margin-bottom: 20px; }
+  .page-title { font-size: 22px; font-weight: 700; }
+  .page-sub { color: var(--muted); font-size: 14px; margin-top: 2px; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; }
+  .card-green { border-color: var(--green)44; background: #10b98111; }
+  .card-red { border-color: var(--red)44; }
+  .card-title { font-size: 13px; color: var(--muted); font-weight: 500; margin-bottom: 6px; }
+  .card-value { font-size: 24px; font-weight: 700; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .card-header .card-title { margin-bottom: 0; }
+
+  /* GRID */
+  .grid { display: grid; gap: 16px; }
+  .grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .grid-3 { grid-template-columns: repeat(3, 1fr); }
+  .grid-2 { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 900px) { .grid-4, .grid-3 { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 600px) { .grid-4, .grid-3, .grid-2 { grid-template-columns: 1fr; } .sidebar { display: none; } }
+
+  /* BUTTONS */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 99px; border: none; cursor: pointer; font-size: 14px; font-weight: 500; transition: all .15s; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-danger { background: var(--red); color: #fff; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-ghost:hover { background: var(--border); }
+  .btn-sm { padding: 5px 12px; font-size: 13px; }
+  .btn-icon { background: none; border: none; cursor: pointer; color: var(--muted); padding: 4px; border-radius: 6px; transition: all .15s; }
+  .btn-icon:hover { color: var(--text); background: var(--surface2); }
+
+  /* TABLE */
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; color: var(--muted); font-weight: 500; font-size: 12px; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+  td { padding: 12px; border-bottom: 1px solid var(--border)66; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: var(--surface2)55; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 99px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: var(--green)22; color: var(--green); }
+  .badge-yellow { background: var(--yellow)22; color: var(--yellow); }
+  .badge-red { background: var(--red)22; color: var(--red); }
+
+  /* FORM */
+  .form-grid { display: grid; gap: 14px; }
+  .form-grid-2 { grid-template-columns: 1fr 1fr; }
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  label { font-size: 13px; color: var(--muted); font-weight: 500; }
+  input, select, textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; color: var(--text); font-size: 14px; outline: none; transition: border .15s; width: 100%; }
+  input:focus, select:focus { border-color: var(--primary); }
+  input::placeholder { color: var(--muted); }
+  .form-actions { display: flex; gap: 10px; margin-top: 4px; }
+
+  /* AUTOCOMPLETE */
+  .autocomplete-wrap { position: relative; }
+  .autocomplete-list { position: absolute; top: 100%; left: 0; right: 0; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; z-index: 100; max-height: 160px; overflow-y: auto; margin-top: 4px; display: none; }
+  .autocomplete-list.open { display: block; }
+  .autocomplete-item { padding: 9px 12px; cursor: pointer; font-size: 14px; }
+  .autocomplete-item:hover { background: var(--border); }
+
+  /* PROGRESS BAR */
+  .progress-wrap { margin-top: 14px; }
+  .progress-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .progress-bar { background: var(--surface2); border-radius: 99px; height: 8px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, var(--primary), var(--green)); transition: width .5s; }
+
+  /* STAT ROW */
+  .stat-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .stat-item { display: flex; flex-direction: column; gap: 2px; }
+  .stat-label { font-size: 11px; color: var(--muted); }
+  .stat-value { font-size: 14px; font-weight: 600; }
+
+  /* DESPESA FLOW */
+  .cat-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 10px; margin-bottom: 16px; }
+  .cat-btn { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; cursor: pointer; text-align: center; font-size: 13px; transition: all .15s; }
+  .cat-btn:hover, .cat-btn.selected { border-color: var(--primary); background: var(--primary)22; color: var(--primary); }
+  .cat-icon { font-size: 22px; margin-bottom: 4px; }
+
+  /* MODAL */
+  .modal-overlay { position: fixed; inset: 0; background: #00000088; z-index: 200; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; width: 100%; max-width: 480px; max-height: 90vh; overflow-y: auto; }
+  .modal-title { font-size: 17px; font-weight: 700; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+  /* TOAST */
+  .toast { position: fixed; bottom: 20px; right: 20px; padding: 12px 18px; border-radius: 10px; font-size: 14px; z-index: 999; color: #fff; animation: fadeIn .2s; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* SEPARADOR */
+  .sep { height: 1px; background: var(--border); margin: 20px 0; }
+  .empty { color: var(--muted); font-size: 14px; padding: 24px; text-align: center; }
+  .green { color: var(--green); }
+  .red { color: var(--red); }
+  .muted { color: var(--muted); }
+  .fw600 { font-weight: 600; }
+  .mt16 { margin-top: 16px; }
+  .mb16 { margin-bottom: 16px; }
+  .flex-between { display: flex; align-items: center; justify-content: space-between; }
+  .gap8 { gap: 8px; }
+  .flex { display: flex; align-items: center; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="brand"><div class="brand-dot"></div>FretesPro</div>
+  <button class="nav-item active" onclick="goTo('dashboard')"><span class="nav-icon">📊</span>Dashboard</button>
+  <button class="nav-item" onclick="goTo('viagens')"><span class="nav-icon">🚛</span>Viagens</button>
+  <button class="nav-item" onclick="goTo('despesas')"><span class="nav-icon">💸</span>Despesas</button>
+  <button class="nav-item" onclick="goTo('relatorios')"><span class="nav-icon">📈</span>Relatórios</button>
+  <button class="nav-item" onclick="goTo('configuracoes')"><span class="nav-icon">⚙️</span>Configurações</button>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <div class="flex gap8">
+      <span id="topbar-mes" class="muted" style="font-size:13px;"></span>
+      <button class="btn btn-ghost btn-sm" onclick="compartilharResumo()" title="Compartilhar resumo do mês">📤 Compartilhar</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- ==================== DASHBOARD ==================== -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub" id="dash-sub"></div>
+      </div>
+
+      <!-- CTA -->
+      <div class="mb16" id="dash-cta-wrap"></div>
+
+      <!-- Viagem ativa -->
+      <div id="dash-ativa-wrap" class="mb16"></div>
+
+      <!-- KPIs -->
+      <div class="grid grid-4 mb16" id="dash-kpis"></div>
+
+      <!-- Últimas 3 viagens -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title fw600" style="font-size:14px;color:var(--text)">Últimas 3 viagens</div>
+          <button class="btn btn-ghost btn-sm" onclick="goTo('viagens')">Ver todas →</button>
+        </div>
+        <div id="dash-ultimas"></div>
+      </div>
+    </div>
+
+    <!-- ==================== VIAGENS ==================== -->
+    <div class="page" id="page-viagens">
+      <div class="page-header flex-between">
+        <div>
+          <div class="page-title">Viagens</div>
+          <div class="page-sub">Histórico e gestão de fretes</div>
+        </div>
+        <button class="btn btn-primary" id="btn-nova-viagem" onclick="abrirModalViagem()">+ Nova Viagem</button>
+      </div>
+
+      <!-- Viagem ativa (se houver) -->
+      <div id="viagens-ativa-wrap" class="mb16"></div>
+
+      <!-- Tabela -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title fw600" style="font-size:14px;color:var(--text)">Histórico</div>
+          <div class="flex gap8">
+            <span id="viagens-count" class="muted" style="font-size:13px;"></span>
+            <button class="btn btn-ghost btn-sm" id="btn-ver-tudo" onclick="toggleVerTudo()" style="display:none;">Ver tudo</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Data</th><th>Rota</th><th>Contratante</th>
+              <th>Faturamento</th><th>Custo</th><th>Lucro</th><th>Margem</th>
+              <th>Status</th><th></th>
+            </tr></thead>
+            <tbody id="viagens-tbody"></tbody>
+          </table>
+        </div>
+        <div id="viagens-empty" class="empty" style="display:none;">Nenhuma viagem registrada ainda.</div>
+      </div>
+    </div>
+
+    <!-- ==================== DESPESAS ==================== -->
+    <div class="page" id="page-despesas">
+      <div class="page-header flex-between">
+        <div>
+          <div class="page-title">Despesas</div>
+          <div class="page-sub">Controle de gastos</div>
+        </div>
+        <button class="btn btn-primary" onclick="abrirModalDespesa()">+ Adicionar Despesa</button>
+      </div>
+
+      <!-- KPIs por categoria -->
+      <div class="grid grid-3 mb16" id="desp-kpis"></div>
+
+      <!-- Histórico de despesas -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title fw600" style="font-size:14px;color:var(--text)">Histórico de despesas</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Data</th><th>Categoria</th><th>Valor</th><th>Litros</th><th>Viagem</th><th></th></tr></thead>
+            <tbody id="desp-tbody"></tbody>
+          </table>
+        </div>
+        <div id="desp-empty" class="empty" style="display:none;">Nenhuma despesa registrada ainda.</div>
+      </div>
+    </div>
+
+    <!-- ==================== RELATÓRIOS ==================== -->
+    <div class="page" id="page-relatorios">
+      <div class="page-header">
+        <div class="page-title">Relatórios</div>
+        <div class="page-sub">Análise de desempenho</div>
+      </div>
+      <div class="grid grid-3 mb16" id="rel-kpis"></div>
+      <div class="card mb16">
+        <div class="card-header"><div class="card-title fw600" style="font-size:14px;color:var(--text)">Corridas por lucratividade</div></div>
+        <div class="table-wrap" id="rel-ranking"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title fw600" style="font-size:14px;color:var(--text)">Despesas por categoria</div></div>
+        <div id="rel-desp-cat"></div>
+      </div>
+    </div>
+
+    <!-- ==================== CONFIGURAÇÕES ==================== -->
+    <div class="page" id="page-configuracoes">
+      <div class="page-header">
+        <div class="page-title">Configurações</div>
+        <div class="page-sub">Perfil do caminhão</div>
+      </div>
+      <div class="card" style="max-width:480px;">
+        <div class="card-title fw600" style="font-size:14px;color:var(--text);margin-bottom:16px;">Perfil do caminhão</div>
+        <div class="form-grid">
+          <div class="field">
+            <label>Consumo médio (km/L)</label>
+            <input type="number" id="cfg-kml" placeholder="Ex: 3.5" step="0.1" min="0">
+            <span style="font-size:12px;color:var(--muted);margin-top:4px;">Mostrado no dashboard e usado para estimar diesel por corrida</span>
+          </div>
+          <div class="field" style="margin-top:8px;">
+            <label>Chave QualP (pedágio) <span class="muted" style="font-weight:400;">— precisa do backend ativo</span></label>
+            <input type="text" id="cfg-qualp" placeholder="Sua chave da API QualP">
+            <span style="font-size:12px;color:var(--muted);margin-top:4px;">Solicitar em qualp.com.br — funciona após deploy do backend</span>
+          </div>
+        </div>
+        <div class="form-actions" style="margin-top:16px;">
+          <button class="btn btn-primary" onclick="salvarConfiguracoes()">Salvar</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL VIAGEM -->
+<div class="modal-overlay" id="modal-viagem">
+  <div class="modal">
+    <div class="modal-title" id="modal-viagem-title">Nova Viagem</div>
+    <div class="form-grid">
+      <div class="form-grid form-grid-2">
+        <div class="field"><label>Data da viagem</label><input type="date" id="v-data"></div>
+        <div class="field"><label>Tonelada</label><input type="number" id="v-tonelada" placeholder="Ex: 22" step="0.1"></div>
+      </div>
+      <div class="field"><label>Ponto de Partida</label><input type="text" id="v-partida" placeholder="Ex: São Paulo - SP"></div>
+      <div class="field"><label>Ponto de Chegada</label><input type="text" id="v-chegada" placeholder="Ex: Curitiba - PR"></div>
+      <div class="field">
+        <label>Distância (km)</label>
+        <div class="flex gap8">
+          <input type="number" id="v-km" placeholder="Ex: 408" style="flex:1;">
+          <button type="button" class="btn btn-ghost btn-sm" onclick="autoCalcDistancia()" title="Calcular via OSRM (gratuito)">📍 Auto</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Contratante</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="v-contratante" placeholder="Digite o nome..." autocomplete="off" oninput="acContratante(this)">
+          <div class="autocomplete-list" id="ac-contratante"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Tipo de Carga</label>
+        <div class="autocomplete-wrap">
+          <input type="text" id="v-carga" placeholder="Ex: Grãos, Combustível, Carga geral..." autocomplete="off" oninput="acCarga(this)">
+          <div class="autocomplete-list" id="ac-carga"></div>
+        </div>
+      </div>
+      <div class="form-grid form-grid-2">
+        <div class="field"><label>Valor do Frete (R$)</label><input type="text" id="v-frete" placeholder="R$ 0,00" oninput="maskMoney(this)"></div>
+        <div class="field"><label>Descontos em Nota (R$)</label><input type="text" id="v-desconto" placeholder="R$ 0,00" oninput="maskMoney(this)"></div>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-viagem')">Cancelar</button>
+      <button class="btn btn-primary" onclick="salvarViagem()">Salvar Viagem</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL DESPESA -->
+<div class="modal-overlay" id="modal-despesa">
+  <div class="modal">
+    <div class="modal-title">Adicionar Despesa</div>
+
+    <!-- Step 1: categoria -->
+    <div id="desp-step1">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:12px;">Selecione a categoria</div>
+      <div class="cat-grid" id="cat-grid"></div>
+      <div class="field mt16">
+        <label>Criar nova categoria</label>
+        <div class="flex gap8">
+          <input type="text" id="nova-cat-input" placeholder="Nome da categoria">
+          <button class="btn btn-ghost btn-sm" onclick="criarCategoria()">Criar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: valor -->
+    <div id="desp-step2" style="display:none;">
+      <div class="flex-between mb16">
+        <div class="fw600" id="desp-cat-label" style="font-size:15px;"></div>
+        <button class="btn btn-ghost btn-sm" onclick="voltarStep1()">← Trocar</button>
+      </div>
+      <div class="form-grid">
+        <div class="field"><label>Valor (R$)</label><input type="text" id="d-valor" placeholder="R$ 0,00" oninput="maskMoney(this)"></div>
+        <div class="field" id="d-litros-field" style="display:none;"><label>Litros abastecidos</label><input type="number" id="d-litros" placeholder="Ex: 150" step="0.1"></div>
+        <div class="field" id="d-viagem-field" style="display:none;">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <input type="checkbox" id="d-viagem-check" style="width:auto;">
+            <span>Faz parte da viagem atual?</span>
+          </label>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="fecharModal('modal-despesa')">Cancelar</button>
+        <button class="btn btn-primary" onclick="salvarDespesa()">Registrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAR -->
+<div class="modal-overlay" id="modal-confirmar">
+  <div class="modal" style="max-width:360px;">
+    <div class="modal-title" id="confirmar-title">Confirmar ação</div>
+    <div id="confirmar-msg" style="color:var(--muted);font-size:14px;"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="fecharModal('modal-confirmar')">Cancelar</button>
+      <button class="btn btn-danger" id="confirmar-btn">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==================== CONFIG ====================
+const CONFIG = {
+  QUALP_KEY: localStorage.getItem('fp_qualp_key') || '',   // preencher em Configurações
+  GMAPS_KEY: localStorage.getItem('fp_gmaps_key') || '',   // opcional — usa OSRM se vazio
+}
+
+// ==================== DB ====================
+const DB = {
+  get viagens() { return JSON.parse(localStorage.getItem('fp_viagens') || '[]') },
+  set viagens(v) { localStorage.setItem('fp_viagens', JSON.stringify(v)) },
+  get despesas() { return JSON.parse(localStorage.getItem('fp_despesas') || '[]') },
+  set despesas(v) { localStorage.setItem('fp_despesas', JSON.stringify(v)) },
+  get categoriasCustom() { return JSON.parse(localStorage.getItem('fp_cats') || '[]') },
+  set categoriasCustom(v) { localStorage.setItem('fp_cats', JSON.stringify(v)) },
+  get categoriasUsadas() {
+    const usadas = [...new Set(DB.despesas.map(d => d.categoria).filter(Boolean))]
+    return usadas.filter(c => !CATS_PADRAO.includes(c))
+  },
+  get contratantes() { return [...new Set(DB.viagens.map(v => v.contratante).filter(Boolean))] },
+  get cargas() { return [...new Set(DB.viagens.map(v => v.tipoCarga).filter(Boolean))] },
+  get kmL() { return parseFloat(localStorage.getItem('fp_kml') || '0') },
+  set kmL(v) { localStorage.setItem('fp_kml', String(v)) },
+  get qualPKey() { return localStorage.getItem('fp_qualp_key') || '' },
+  set qualPKey(v) { localStorage.setItem('fp_qualp_key', v); CONFIG.QUALP_KEY = v },
+  get viagemAtiva() { return DB.viagens.find(v => v.status === 'EM_ANDAMENTO') || null },
+  custoViagem(v) {
+    const desc = parseMoney(v.descontosNota || 0)
+    const desp = DB.despesas.filter(d => d.viagemId === v.id).reduce((s, d) => s + parseMoney(d.valor), 0)
+    return desc + desp
+  },
+  lucroViagem(v) { return parseMoney(v.valorFrete) - DB.custoViagem(v) }
+}
+
+const CATS_PADRAO = ['Diesel', 'Pedágio', 'Alimentação']
+const CAT_ICONS = { 'Diesel': '⛽', 'Pedágio': '🛣️', 'Alimentação': '🍽️' }
+const DEFAULT_ICON = '📦'
+
+// ==================== HELPERS ====================
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2) }
+function today() { return new Date().toISOString().slice(0, 10) }
+function fmtDate(s) { if (!s) return '—'; const d = new Date(s); return isNaN(d) ? s : d.toLocaleDateString('pt-BR') }
+function fmtBRL(n) { return 'R$ ' + Number(n || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) }
+function parseMoney(s) {
+  if (typeof s === 'number') return s
+  const c = String(s || '').replace(/[^0-9,]/g, '').replace(',', '.')
+  return parseFloat(c) || 0
+}
+function maskMoney(el) {
+  const nums = el.value.replace(/\D/g, '')
+  el.value = nums ? fmtBRL(parseInt(nums, 10) / 100) : ''
+}
+function margemPct(v) { const f = parseMoney(v.valorFrete); return f > 0 ? Math.round((DB.lucroViagem(v) / f) * 100) : 0 }
+function toast(msg, type = 'success') {
+  const t = document.createElement('div')
+  t.className = 'toast'
+  t.style.background = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#334155'
+  t.textContent = msg
+  document.body.appendChild(t)
+  setTimeout(() => t.remove(), 2500)
+}
+function confirmar(title, msg, fn) {
+  document.getElementById('confirmar-title').textContent = title
+  document.getElementById('confirmar-msg').textContent = msg
+  const btn = document.getElementById('confirmar-btn')
+  btn.onclick = () => { fecharModal('modal-confirmar'); fn() }
+  abrirModal('modal-confirmar')
+}
+function abrirModal(id) { document.getElementById(id).classList.add('open') }
+function fecharModal(id) { document.getElementById(id).classList.remove('open') }
+document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open') }))
+
+// ==================== NAV ====================
+const TITLES = { dashboard: 'Dashboard', viagens: 'Viagens', despesas: 'Despesas', relatorios: 'Relatórios', configuracoes: 'Configurações' }
+function goTo(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'))
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'))
+  document.getElementById('page-' + page).classList.add('active')
+  const idx = ['dashboard','viagens','despesas','relatorios','configuracoes'].indexOf(page)
+  if (idx >= 0) document.querySelectorAll('.nav-item')[idx].classList.add('active')
+  document.getElementById('topbar-title').textContent = TITLES[page]
+  renders[page]()
+}
+const renders = { dashboard: renderDashboard, viagens: renderViagens, despesas: renderDespesas, relatorios: renderRelatorios, configuracoes: renderConfiguracoes }
+
+// ==================== AUTOCOMPLETE ====================
+function makeAC(el, items, listId) {
+  const q = el.value.toLowerCase()
+  const list = document.getElementById(listId)
+  const matches = items.filter(c => c.toLowerCase().includes(q) && q.length > 0)
+  if (!matches.length) { list.classList.remove('open'); return }
+  list.innerHTML = ''
+  matches.forEach(c => {
+    const item = document.createElement('div')
+    item.className = 'autocomplete-item'
+    item.textContent = c
+    item.onclick = () => { el.value = c; list.classList.remove('open') }
+    list.appendChild(item)
+  })
+  list.classList.add('open')
+}
+function acContratante(el) { makeAC(el, DB.contratantes, 'ac-contratante') }
+function acCarga(el) { makeAC(el, DB.cargas, 'ac-carga') }
+document.addEventListener('click', e => {
+  if (!e.target.closest('.autocomplete-wrap')) document.querySelectorAll('.autocomplete-list').forEach(l => l.classList.remove('open'))
+})
+
+// ==================== VIAGEM ====================
+let editandoViagemId = null
+function abrirModalViagem(id = null) {
+  editandoViagemId = id
+  const v = id ? DB.viagens.find(x => x.id === id) : null
+  document.getElementById('modal-viagem-title').textContent = id ? 'Editar Viagem' : 'Nova Viagem'
+  document.getElementById('v-data').value = v ? v.dataViagem : today()
+  document.getElementById('v-partida').value = v ? v.pontoPartida : ''
+  document.getElementById('v-chegada').value = v ? v.pontoChegada : ''
+  document.getElementById('v-km').value = v ? v.distanciaKm : ''
+  document.getElementById('v-tonelada').value = v ? v.tonelada : ''
+  document.getElementById('v-contratante').value = v ? v.contratante : ''
+  document.getElementById('v-carga').value = v ? (v.tipoCarga || '') : ''
+  document.getElementById('v-frete').value = v ? fmtBRL(parseMoney(v.valorFrete)) : ''
+  document.getElementById('v-desconto').value = v ? fmtBRL(parseMoney(v.descontosNota)) : ''
+  abrirModal('modal-viagem')
+}
+function salvarViagem() {
+  const data = {
+    dataViagem: document.getElementById('v-data').value,
+    pontoPartida: document.getElementById('v-partida').value.trim(),
+    pontoChegada: document.getElementById('v-chegada').value.trim(),
+    distanciaKm: parseInt(document.getElementById('v-km').value) || 0,
+    tonelada: parseFloat(document.getElementById('v-tonelada').value) || 0,
+    contratante: document.getElementById('v-contratante').value.trim(),
+    tipoCarga: document.getElementById('v-carga').value.trim(),
+    valorFrete: parseMoney(document.getElementById('v-frete').value),
+    descontosNota: parseMoney(document.getElementById('v-desconto').value),
+  }
+  if (!data.pontoPartida || !data.pontoChegada || !data.valorFrete) {
+    toast('Preencha os campos obrigatórios', 'error'); return
+  }
+  const arr = DB.viagens
+  if (editandoViagemId) {
+    const idx = arr.findIndex(v => v.id === editandoViagemId)
+    if (idx >= 0) arr[idx] = { ...arr[idx], ...data }
+  } else {
+    arr.unshift({ id: uid(), ...data, status: 'EM_ANDAMENTO', createdAt: new Date().toISOString() })
+  }
+  DB.viagens = arr
+  fecharModal('modal-viagem')
+  toast(editandoViagemId ? 'Viagem atualizada' : 'Viagem iniciada!')
+  renders[document.querySelector('.page.active').id.replace('page-', '')]()
+}
+function encerrarViagem(id) {
+  confirmar('Encerrar viagem', 'Confirma o encerramento desta viagem? O valor do frete será registrado.', () => {
+    const arr = DB.viagens
+    const idx = arr.findIndex(v => v.id === id)
+    if (idx >= 0) arr[idx].status = 'FINALIZADA'
+    DB.viagens = arr
+    toast('Viagem encerrada!')
+    renders[document.querySelector('.page.active').id.replace('page-', '')]()
+  })
+}
+function excluirViagem(id) {
+  confirmar('Excluir viagem', 'Esta ação não pode ser desfeita. Deseja continuar?', () => {
+    DB.viagens = DB.viagens.filter(v => v.id !== id)
+    toast('Viagem excluída')
+    renders[document.querySelector('.page.active').id.replace('page-', '')]()
+  })
+}
+
+let verTudo = false
+function toggleVerTudo() {
+  verTudo = !verTudo
+  document.getElementById('btn-ver-tudo').textContent = verTudo ? 'Ver menos' : 'Ver tudo'
+  renderViagens()
+}
+
+// ==================== DESPESA ====================
+let catSelecionada = null
+function abrirModalDespesa(viagemId = null) {
+  catSelecionada = null
+  document.getElementById('desp-step1').style.display = ''
+  document.getElementById('desp-step2').style.display = 'none'
+  document.getElementById('d-valor').value = ''
+  document.getElementById('d-litros').value = ''
+  document.getElementById('d-viagem-check').checked = !!viagemId
+  document.getElementById('nova-cat-input').value = ''
+  renderCatGrid(viagemId)
+  abrirModal('modal-despesa')
+}
+function renderCatGrid(viagemId) {
+  const usadas = DB.categoriasUsadas
+  const todas = [...CATS_PADRAO, ...usadas]
+  const grid = document.getElementById('cat-grid')
+  grid.innerHTML = ''
+  todas.forEach(cat => {
+    const btn = document.createElement('div')
+    btn.className = 'cat-btn'
+    btn.innerHTML = `<div class="cat-icon">${CAT_ICONS[cat] || DEFAULT_ICON}</div><div>${cat}</div>`
+    btn.onclick = () => selecionarCategoria(cat, viagemId)
+    grid.appendChild(btn)
+  })
+}
+function selecionarCategoria(cat, viagemId = null) {
+  catSelecionada = cat
+  document.getElementById('desp-step1').style.display = 'none'
+  document.getElementById('desp-step2').style.display = ''
+  document.getElementById('desp-cat-label').textContent = (CAT_ICONS[cat] || DEFAULT_ICON) + ' ' + cat
+  const isDiesel = cat === 'Diesel'
+  document.getElementById('d-litros-field').style.display = isDiesel ? '' : 'none'
+  const ativa = DB.viagemAtiva
+  const vField = document.getElementById('d-viagem-field')
+  vField.style.display = ativa ? '' : 'none'
+  if (viagemId) document.getElementById('d-viagem-check').checked = true
+}
+function voltarStep1() {
+  catSelecionada = null
+  document.getElementById('desp-step1').style.display = ''
+  document.getElementById('desp-step2').style.display = 'none'
+}
+function criarCategoria() {
+  const nome = document.getElementById('nova-cat-input').value.trim()
+  if (!nome) return
+  const cats = DB.categoriasCustom
+  if (!cats.includes(nome) && !CATS_PADRAO.includes(nome)) {
+    cats.push(nome)
+    DB.categoriasCustom = cats
+  }
+  document.getElementById('nova-cat-input').value = ''
+  selecionarCategoria(nome)
+}
+function salvarDespesa() {
+  if (!catSelecionada) { toast('Selecione uma categoria', 'error'); return }
+  const valor = parseMoney(document.getElementById('d-valor').value)
+  if (!valor) { toast('Informe o valor', 'error'); return }
+  const ativa = DB.viagemAtiva
+  const vinculada = ativa && document.getElementById('d-viagem-check').checked
+  const despesa = {
+    id: uid(), categoria: catSelecionada, valor,
+    litros: catSelecionada === 'Diesel' ? (parseFloat(document.getElementById('d-litros').value) || null) : null,
+    viagemId: vinculada ? ativa.id : null,
+    data: today(), createdAt: new Date().toISOString()
+  }
+  const arr = DB.despesas
+  arr.unshift(despesa)
+  DB.despesas = arr
+  fecharModal('modal-despesa')
+  toast('Despesa registrada!')
+  renders[document.querySelector('.page.active').id.replace('page-', '')]()
+}
+function excluirDespesa(id) {
+  confirmar('Excluir despesa', 'Deseja remover esta despesa?', () => {
+    DB.despesas = DB.despesas.filter(d => d.id !== id)
+    toast('Despesa removida')
+    renderDespesas()
+  })
+}
+
+// ==================== RENDER DASHBOARD ====================
+function renderDashboard() {
+  const now = new Date()
+  const mes = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+  document.getElementById('dash-sub').textContent = mes.charAt(0).toUpperCase() + mes.slice(1)
+  document.getElementById('topbar-mes').textContent = mes.charAt(0).toUpperCase() + mes.slice(1)
+
+  // CTA
+  const ativa = DB.viagemAtiva
+  const ctaWrap = document.getElementById('dash-cta-wrap')
+  if (ativa) {
+    ctaWrap.innerHTML = `<button class="btn btn-danger" onclick="encerrarViagem('${ativa.id}')">🔴 Encerrar Viagem Atual</button>`
+  } else {
+    ctaWrap.innerHTML = `<button class="btn btn-primary" onclick="goTo('viagens');setTimeout(abrirModalViagem,100)">+ Iniciar Nova Viagem</button>`
+  }
+
+  // Viagem ativa
+  const ativaWrap = document.getElementById('dash-ativa-wrap')
+  if (ativa) {
+    const custo = DB.custoViagem(ativa)
+    const lucro = DB.lucroViagem(ativa)
+    ativaWrap.innerHTML = `
+      <div class="card card-green">
+        <div class="card-header">
+          <div style="font-size:14px;font-weight:700;">🚛 Viagem em andamento</div>
+          <button class="btn btn-ghost btn-sm" onclick="abrirModalDespesa('${ativa.id}')">+ Despesa desta viagem</button>
+        </div>
+        <div class="stat-row mt16">
+          <div class="stat-item"><div class="stat-label">Rota</div><div class="stat-value">${ativa.pontoPartida} → ${ativa.pontoChegada}</div></div>
+          <div class="stat-item"><div class="stat-label">Contratante</div><div class="stat-value">${ativa.contratante || '—'}</div></div>
+          <div class="stat-item"><div class="stat-label">Frete</div><div class="stat-value green">${fmtBRL(ativa.valorFrete)}</div></div>
+          <div class="stat-item"><div class="stat-label">Custo atual</div><div class="stat-value red">${fmtBRL(custo)}</div></div>
+          <div class="stat-item"><div class="stat-label">Lucro atual</div><div class="stat-value ${lucro >= 0 ? 'green' : 'red'}">${fmtBRL(lucro)}</div></div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-labels"><span class="gps-pct-label">0% percorrido</span><span id="gps-status" style="font-size:12px;color:var(--muted)">📡 Aguardando GPS...</span></div>
+          <div class="progress-bar"><div class="progress-fill" id="gps-progress-bar" style="width:0%"></div></div>
+        </div>
+      </div>`
+    iniciarGPSViagem(ativa)
+  } else {
+    ativaWrap.innerHTML = ''
+    pararGPSViagem()
+  }
+
+  // KPIs do mês
+  const cm = now.getMonth(), cy = now.getFullYear()
+  const mes_viagens = DB.viagens.filter(v => { const d = new Date(v.dataViagem); return d.getMonth()===cm && d.getFullYear()===cy })
+  const fat = mes_viagens.reduce((s, v) => s + parseMoney(v.valorFrete), 0)
+  const custo = mes_viagens.reduce((s, v) => s + DB.custoViagem(v), 0)
+  const lucro = fat - custo
+  const km = mes_viagens.reduce((s, v) => s + Number(v.distanciaKm || 0), 0)
+  const kml = DB.kmL
+  const consumoCard = kml > 0
+    ? `<div class="card"><div class="card-title">⛽ Consumo médio</div><div class="card-value">${kml.toFixed(1)} km/L</div><div style="font-size:12px;color:var(--muted);margin-top:4px;">~R$${kml > 0 ? (6.2/kml).toFixed(2) : '—'}/km</div></div>`
+    : `<div class="card" style="border-style:dashed;cursor:pointer;" onclick="goTo('configuracoes')"><div class="card-title">⛽ Consumo médio</div><div class="card-value muted" style="font-size:16px;">Configurar →</div></div>`
+  document.getElementById('dash-kpis').innerHTML = `
+    <div class="card"><div class="card-title">Faturamento</div><div class="card-value green">${fmtBRL(fat)}</div></div>
+    <div class="card"><div class="card-title">Custo total</div><div class="card-value red">${fmtBRL(custo)}</div></div>
+    <div class="card"><div class="card-title">Lucro líquido</div><div class="card-value ${lucro>=0?'green':'red'}">${fmtBRL(lucro)}</div></div>
+    <div class="card"><div class="card-title">KM rodados</div><div class="card-value">${km.toLocaleString('pt-BR')} km</div></div>
+    ${consumoCard}`
+
+  // Últimas 3 viagens
+  const ultimas = DB.viagens.slice(0, 3)
+  const ul = document.getElementById('dash-ultimas')
+  if (!ultimas.length) { ul.innerHTML = '<div class="empty">Nenhuma viagem ainda.</div>'; return }
+  ul.innerHTML = ''
+  const tbl = document.createElement('table')
+  tbl.innerHTML = `<thead><tr><th>Data</th><th>Rota</th><th>Faturamento</th><th>Custo</th><th>Lucro</th><th>Margem</th><th>Status</th></tr></thead>`
+  const tbody = document.createElement('tbody')
+  ultimas.forEach(v => {
+    const custo = DB.custoViagem(v), lucro = DB.lucroViagem(v), mg = margemPct(v)
+    const tr = document.createElement('tr')
+    tr.innerHTML = `
+      <td>${fmtDate(v.dataViagem)}</td>
+      <td><strong>${v.pontoPartida}</strong> → ${v.pontoChegada}</td>
+      <td class="green">${fmtBRL(v.valorFrete)}</td>
+      <td class="red">${fmtBRL(custo)}</td>
+      <td class="${lucro>=0?'green':'red'} fw600">${fmtBRL(lucro)}</td>
+      <td><span class="badge ${lucro<0?'badge-red':mg>=20?'badge-green':'badge-yellow'}">${mg}%</span></td>
+      <td><span class="badge ${v.status==='FINALIZADA'?'badge-green':'badge-yellow'}">${v.status==='FINALIZADA'?'Finalizada':'Em andamento'}</span></td>`
+    tbody.appendChild(tr)
+  })
+  tbl.appendChild(tbody)
+  ul.appendChild(tbl)
+}
+
+// ==================== RENDER VIAGENS ====================
+function renderViagens() {
+  const ativa = DB.viagemAtiva
+  // Botão nova viagem — só quando não tem ativa
+  document.getElementById('btn-nova-viagem').style.display = ativa ? 'none' : ''
+
+  // Card viagem ativa
+  const wrap = document.getElementById('viagens-ativa-wrap')
+  if (ativa) {
+    const custo = DB.custoViagem(ativa), lucro = DB.lucroViagem(ativa)
+    wrap.innerHTML = `
+      <div class="card card-green">
+        <div class="card-header">
+          <div style="font-size:14px;font-weight:700;">🚛 Viagem em andamento</div>
+          <div class="flex gap8">
+            <button class="btn btn-ghost btn-sm" onclick="abrirModalDespesa('${ativa.id}')">+ Despesa</button>
+            <button class="btn btn-ghost btn-sm" onclick="abrirModalViagem('${ativa.id}')">✏️ Editar</button>
+            <button class="btn btn-danger btn-sm" onclick="encerrarViagem('${ativa.id}')">Encerrar</button>
+          </div>
+        </div>
+        <div class="stat-row">
+          <div class="stat-item"><div class="stat-label">Rota</div><div class="stat-value">${ativa.pontoPartida} → ${ativa.pontoChegada}</div></div>
+          <div class="stat-item"><div class="stat-label">Contratante</div><div class="stat-value">${ativa.contratante || '—'}</div></div>
+          <div class="stat-item"><div class="stat-label">KM</div><div class="stat-value">${Number(ativa.distanciaKm||0).toLocaleString('pt-BR')} km</div></div>
+          <div class="stat-item"><div class="stat-label">Frete</div><div class="stat-value green">${fmtBRL(ativa.valorFrete)}</div></div>
+          <div class="stat-item"><div class="stat-label">Custo atual</div><div class="stat-value red">${fmtBRL(custo)}</div></div>
+          <div class="stat-item"><div class="stat-label">Lucro atual</div><div class="stat-value ${lucro>=0?'green':'red'}">${fmtBRL(lucro)}</div></div>
+        </div>
+        <div class="progress-wrap">
+          <div class="progress-labels"><span class="gps-pct-label">0% percorrido</span><span id="gps-status-v" style="font-size:12px;color:var(--muted)">📡 Aguardando GPS...</span></div>
+          <div class="progress-bar"><div class="progress-fill" id="gps-progress-bar-v" style="width:0%"></div></div>
+        </div>
+      </div>`
+  } else {
+    wrap.innerHTML = ''
+  }
+
+  // Tabela histórico
+  const todas = DB.viagens.filter(v => v.status !== 'EM_ANDAMENTO')
+  const exibir = verTudo ? todas : todas.slice(0, 10)
+  const tbody = document.getElementById('viagens-tbody')
+  const empty = document.getElementById('viagens-empty')
+  const btnTudo = document.getElementById('btn-ver-tudo')
+  document.getElementById('viagens-count').textContent = `${todas.length} viagens`
+  btnTudo.style.display = todas.length > 10 ? '' : 'none'
+
+  if (!todas.length) { empty.style.display = ''; tbody.innerHTML = ''; return }
+  empty.style.display = 'none'
+  tbody.innerHTML = ''
+  exibir.forEach(v => {
+    const custo = DB.custoViagem(v), lucro = DB.lucroViagem(v), mg = margemPct(v)
+    const tr = document.createElement('tr')
+    tr.innerHTML = `
+      <td>${fmtDate(v.dataViagem)}</td>
+      <td><strong>${v.pontoPartida}</strong><br><span class="muted" style="font-size:12px;">→ ${v.pontoChegada}</span></td>
+      <td>${v.contratante || '—'}</td>
+      <td class="green fw600">${fmtBRL(v.valorFrete)}</td>
+      <td class="red">${fmtBRL(custo)}</td>
+      <td class="${lucro>=0?'green':'red'} fw600">${fmtBRL(lucro)}</td>
+      <td><span class="badge ${lucro<0?'badge-red':mg>=20?'badge-green':'badge-yellow'}">${mg}%</span></td>
+      <td><span class="badge badge-green">Finalizada</span></td>
+      <td>
+        <button class="btn-icon" onclick="abrirModalViagem('${v.id}')" title="Editar">✏️</button>
+        <button class="btn-icon" onclick="excluirViagem('${v.id}')" title="Excluir">🗑️</button>
+      </td>`
+    tbody.appendChild(tr)
+  })
+}
+
+// ==================== RENDER DESPESAS ====================
+function renderDespesas() {
+  const despesas = DB.despesas
+  const todas_cats = [...CATS_PADRAO, ...DB.categoriasUsadas]
+  const kpis = document.getElementById('desp-kpis')
+  kpis.innerHTML = ''
+  todas_cats.forEach(cat => {
+    const total = despesas.filter(d => d.categoria === cat).reduce((s, d) => s + parseMoney(d.valor), 0)
+    if (total === 0 && !CATS_PADRAO.includes(cat)) return
+    const card = document.createElement('div')
+    card.className = 'card'
+    card.innerHTML = `
+      <div class="card-title">${CAT_ICONS[cat] || DEFAULT_ICON} ${cat}</div>
+      <div class="card-value red">${fmtBRL(total)}</div>`
+    kpis.appendChild(card)
+  })
+
+  const tbody = document.getElementById('desp-tbody')
+  const empty = document.getElementById('desp-empty')
+  if (!despesas.length) { empty.style.display = ''; tbody.innerHTML = ''; return }
+  empty.style.display = 'none'
+  tbody.innerHTML = ''
+  despesas.forEach(d => {
+    const viagem = d.viagemId ? DB.viagens.find(v => v.id === d.viagemId) : null
+    const tr = document.createElement('tr')
+    tr.innerHTML = `
+      <td>${fmtDate(d.data)}</td>
+      <td>${CAT_ICONS[d.categoria] || DEFAULT_ICON} ${d.categoria}</td>
+      <td class="red fw600">${fmtBRL(d.valor)}</td>
+      <td>${d.litros ? d.litros + ' L' : '—'}</td>
+      <td>${viagem ? `<span style="font-size:12px;">${viagem.pontoPartida} → ${viagem.pontoChegada}</span>` : '<span class="muted">—</span>'}</td>
+      <td><button class="btn-icon" onclick="excluirDespesa('${d.id}')" title="Excluir">🗑️</button></td>`
+    tbody.appendChild(tr)
+  })
+}
+
+// ==================== RENDER RELATÓRIOS ====================
+function renderRelatorios() {
+  const viagens = DB.viagens
+  const despesas = DB.despesas
+  const fat = viagens.reduce((s, v) => s + parseMoney(v.valorFrete), 0)
+  const custo = viagens.reduce((s, v) => s + DB.custoViagem(v), 0)
+  const lucro = fat - custo
+  document.getElementById('rel-kpis').innerHTML = `
+    <div class="card"><div class="card-title">Faturamento total</div><div class="card-value green">${fmtBRL(fat)}</div></div>
+    <div class="card"><div class="card-title">Custo total</div><div class="card-value red">${fmtBRL(custo)}</div></div>
+    <div class="card"><div class="card-title">Lucro total</div><div class="card-value ${lucro>=0?'green':'red'} fw600">${fmtBRL(lucro)}</div></div>`
+
+  // Despesas por categoria
+  const todas_cats = [...CATS_PADRAO, ...DB.categoriasUsadas]
+  const relDesp = document.getElementById('rel-desp-cat')
+  relDesp.innerHTML = ''
+  todas_cats.forEach(cat => {
+    const total = despesas.filter(d => d.categoria === cat).reduce((s, d) => s + parseMoney(d.valor), 0)
+    if (!total) return
+    const pct = custo ? Math.round((total / custo) * 100) : 0
+    relDesp.innerHTML += `
+      <div style="margin-bottom:14px;">
+        <div class="flex-between" style="margin-bottom:6px;font-size:13px;">
+          <span>${CAT_ICONS[cat]||DEFAULT_ICON} ${cat}</span>
+          <span class="fw600">${fmtBRL(total)} <span class="muted">(${pct}%)</span></span>
+        </div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:var(--yellow);"></div></div>
+      </div>`
+  })
+  if (!relDesp.innerHTML) relDesp.innerHTML = '<div class="empty">Nenhuma despesa registrada.</div>'
+
+  // Ranking de corridas por lucratividade
+  const finalizadas = DB.viagens.filter(v => v.status === 'FINALIZADA')
+    .map(v => ({ ...v, _custo: DB.custoViagem(v), _lucro: DB.lucroViagem(v), _mg: margemPct(v) }))
+    .sort((a, b) => b._lucro - a._lucro)
+  const rankDiv = document.getElementById('rel-ranking')
+  if (finalizadas.length) {
+    rankDiv.innerHTML = ''
+    const tbl = document.createElement('table')
+    tbl.innerHTML = `<thead><tr><th>#</th><th>Rota</th><th>Contratante</th><th>Frete</th><th>Custo</th><th>Lucro</th><th>Margem</th></tr></thead>`
+    const rb = document.createElement('tbody')
+    finalizadas.forEach((v, i) => {
+      const tr = document.createElement('tr')
+      tr.innerHTML = `
+        <td class="muted" style="font-size:12px;">${i+1}</td>
+        <td><strong>${v.pontoPartida}</strong><br><span class="muted" style="font-size:12px;">→ ${v.pontoChegada}</span></td>
+        <td>${v.contratante || '—'}</td>
+        <td class="green fw600">${fmtBRL(v.valorFrete)}</td>
+        <td class="red">${fmtBRL(v._custo)}</td>
+        <td class="${v._lucro>=0?'green':'red'} fw600">${fmtBRL(v._lucro)}</td>
+        <td><span class="badge ${v._lucro<0?'badge-red':v._mg>=20?'badge-green':'badge-yellow'}">${v._mg}%</span></td>`
+      rb.appendChild(tr)
+    })
+    tbl.appendChild(rb)
+    rankDiv.appendChild(tbl)
+  } else {
+    rankDiv.innerHTML = '<div class="empty">Nenhuma viagem finalizada ainda.</div>'
+  }
+}
+
+// ==================== GPS ====================
+let gpsWatchId = null
+let gpsPosAtual = null
+
+function iniciarGPSViagem(ativa) {
+  if (!navigator.geolocation || gpsWatchId !== null) return
+  gpsWatchId = navigator.geolocation.watchPosition(pos => {
+    gpsPosAtual = { lat: pos.coords.latitude, lon: pos.coords.longitude }
+    if (!ativa.gpsOrigem) {
+      const arr = DB.viagens
+      const idx = arr.findIndex(x => x.id === ativa.id)
+      if (idx >= 0) { arr[idx].gpsOrigem = gpsPosAtual; DB.viagens = arr }
+    }
+    atualizarBarraGPS(ativa)
+  }, err => {
+    document.querySelectorAll('#gps-status,#gps-status-v').forEach(el => { if (el) el.textContent = '📡 GPS indisponível' })
+  }, { enableHighAccuracy: true, maximumAge: 30000, timeout: 15000 })
+}
+
+function pararGPSViagem() {
+  if (gpsWatchId !== null) { navigator.geolocation.clearWatch(gpsWatchId); gpsWatchId = null }
+  gpsPosAtual = null
+}
+
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371, dLat = (lat2-lat1)*Math.PI/180, dLon = (lon2-lon1)*Math.PI/180
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLon/2)**2
+  return R * 2 * Math.asin(Math.sqrt(a))
+}
+
+function atualizarBarraGPS(ativa) {
+  const origem = ativa.gpsOrigem
+  if (!origem || !gpsPosAtual || !ativa.distanciaKm) return
+  const percorrido = haversineKm(origem.lat, origem.lon, gpsPosAtual.lat, gpsPosAtual.lon)
+  const pct = Math.min(Math.round((percorrido / Number(ativa.distanciaKm)) * 100), 100)
+  const label = `${pct}% percorrido (${percorrido.toFixed(1)} km)`
+  const status = `📡 GPS ativo`
+  document.querySelectorAll('.gps-pct-label').forEach(el => { el.textContent = label })
+  document.querySelectorAll('#gps-status,#gps-status-v').forEach(el => { if (el) el.textContent = status; if (el) el.style.color = 'var(--green)' })
+  document.querySelectorAll('#gps-progress-bar,#gps-progress-bar-v').forEach(el => { if (el) el.style.width = pct + '%' })
+}
+
+// ==================== OSRM + NOMINATIM ====================
+async function autoCalcDistancia() {
+  const partida = document.getElementById('v-partida').value.trim()
+  const chegada = document.getElementById('v-chegada').value.trim()
+  if (!partida || !chegada) { toast('Preencha partida e chegada primeiro', 'error'); return }
+  toast('Calculando rota...', 'info')
+  try {
+    const [c1, c2] = await Promise.all([geocodar(partida), geocodar(chegada)])
+    if (!c1 || !c2) { toast('Não foi possível localizar os endereços', 'error'); return }
+    const res = await fetch(`https://router.project-osrm.org/route/v1/driving/${c1.lon},${c1.lat};${c2.lon},${c2.lat}?overview=false`)
+    const data = await res.json()
+    if (data.routes?.[0]) {
+      const km = Math.round(data.routes[0].distance / 1000)
+      document.getElementById('v-km').value = km
+      toast(`✅ ${km} km calculados via OSRM`)
+    }
+  } catch { toast('Erro ao calcular rota', 'error') }
+}
+
+async function geocodar(local) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(local + ', Brasil')}&format=json&limit=1`, { headers: { 'Accept-Language': 'pt-BR' } })
+    const data = await res.json()
+    if (data[0]) return { lat: parseFloat(data[0].lat), lon: parseFloat(data[0].lon) }
+  } catch {}
+  return null
+}
+
+// ==================== QUALP (requer backend) ====================
+async function estimarPedagioQualP(partida, chegada) {
+  const key = DB.qualPKey
+  if (!key) return null
+  // NOTA: chamada direta do browser falha por CORS — usar via backend proxy após deploy
+  try {
+    const res = await fetch(`/api/pedagio?origin=${encodeURIComponent(partida)}&destination=${encodeURIComponent(chegada)}`)
+    const data = await res.json()
+    return data.tollCost || 0
+  } catch { return null }
+}
+
+// ==================== COMPARTILHAR ====================
+function compartilharResumo() {
+  const now = new Date()
+  const mes = now.toLocaleDateString('pt-BR', { month: 'long', year: 'numeric' })
+  const cm = now.getMonth(), cy = now.getFullYear()
+  const mv = DB.viagens.filter(v => { const d = new Date(v.dataViagem); return d.getMonth()===cm && d.getFullYear()===cy && v.status==='FINALIZADA' })
+  const fat = mv.reduce((s, v) => s + parseMoney(v.valorFrete), 0)
+  const custo = mv.reduce((s, v) => s + DB.custoViagem(v), 0)
+  const lucro = fat - custo
+  const mg = fat > 0 ? Math.round((lucro/fat)*100) : 0
+  const melhor = mv.map(v => ({ ...v, _lucro: DB.lucroViagem(v) })).sort((a,b) => b._lucro - a._lucro)[0]
+  const texto = [
+    `🚛 FretesPro — ${mes.charAt(0).toUpperCase()+mes.slice(1)}`,
+    ``,
+    `Corridas finalizadas: ${mv.length}`,
+    `Faturamento: ${fmtBRL(fat)}`,
+    `Custo total: ${fmtBRL(custo)}`,
+    `Lucro líquido: ${fmtBRL(lucro)}`,
+    `Margem: ${mg}%`,
+    melhor ? `Melhor corrida: ${melhor.pontoPartida} → ${melhor.pontoChegada} (${fmtBRL(melhor._lucro)})` : ''
+  ].filter(Boolean).join('\n')
+  navigator.clipboard.writeText(texto)
+    .then(() => toast('Resumo copiado! Cole no WhatsApp 📋'))
+    .catch(() => prompt('Copie o texto abaixo:', texto))
+}
+
+// ==================== CONFIGURAÇÕES ====================
+function renderConfiguracoes() {
+  document.getElementById('cfg-kml').value = DB.kmL || ''
+  document.getElementById('cfg-qualp').value = DB.qualPKey || ''
+}
+function salvarConfiguracoes() {
+  const kml = parseFloat(document.getElementById('cfg-kml').value) || 0
+  DB.kmL = kml
+  DB.qualPKey = document.getElementById('cfg-qualp').value.trim()
+  toast('Configurações salvas!')
+  renderDashboard()
+}
+
+// ==================== INIT ====================
+document.getElementById('topbar-mes').textContent = ''
+renderDashboard()
+</script>
+</body>
+</html>
