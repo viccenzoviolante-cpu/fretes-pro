@@ -1,10 +1,10 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 
-export default function CadastroPage() {
+function CadastroForm() {
   const searchParams = useSearchParams()
   const [nome, setNome] = useState('')
   const [email, setEmail] = useState('')
@@ -60,19 +60,12 @@ export default function CadastroPage() {
       return
     }
 
-    // Se tinha código promo com trial diferente, atualiza
     if (codigo.trim() && data.user && trialDias !== 7) {
       const trialFim = new Date()
       trialFim.setDate(trialFim.getDate() + trialDias)
-      await supabase
-        .from('users')
-        .update({ trial_fim: trialFim.toISOString() })
-        .eq('id', data.user.id)
-      // Incrementa uso
-      await supabase
-        .from('promo_codes')
-        .update({ usos_atual: (await supabase.from('promo_codes').select('usos_atual').eq('codigo', codigo.trim().toUpperCase()).single()).data?.usos_atual ?? 0 + 1 })
-        .eq('codigo', codigo.trim().toUpperCase())
+      await supabase.from('users').update({ trial_fim: trialFim.toISOString() }).eq('id', data.user.id)
+      const { data: p } = await supabase.from('promo_codes').select('usos_atual').eq('codigo', codigo.trim().toUpperCase()).single()
+      if (p) await supabase.from('promo_codes').update({ usos_atual: p.usos_atual + 1 }).eq('codigo', codigo.trim().toUpperCase())
     }
 
     router.push('/dashboard')
@@ -119,5 +112,13 @@ export default function CadastroPage() {
         <Link href="/login" style={{ color: 'var(--primary)' }}>Entrar</Link>
       </p>
     </div>
+  )
+}
+
+export default function CadastroPage() {
+  return (
+    <Suspense fallback={<div className="auth-card"><div className="empty">Carregando...</div></div>}>
+      <CadastroForm />
+    </Suspense>
   )
 }
