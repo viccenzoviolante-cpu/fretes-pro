@@ -11,7 +11,7 @@ const NAV = [
   { href: '/viagens', icon: '🚛', label: 'Viagens' },
   { href: '/despesas', icon: '💸', label: 'Despesas' },
   { href: '/relatorios', icon: '📈', label: 'Relatórios' },
-  { href: '/configuracoes', icon: '⚙️', label: 'Configurações' },
+  { href: '/configuracoes', icon: '⚙️', label: 'Config' },
 ]
 
 const TITLES: Record<string, string> = {
@@ -64,14 +64,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const placaMasked = placa ? maskPlaca(placa) : null
 
   return (
-    <div className={tema !== 'azul' ? `tema-${tema}` : ''} style={{ display: 'flex', minHeight: '100vh', background: 'var(--bg)' }}>
+    <div className={`app-root${tema !== 'azul' ? ` tema-${tema}` : ''}`}>
+
+      {/* SIDEBAR — desktop */}
       <aside className="sidebar">
         <Link href="/dashboard" className="brand">
           <div className="brand-dot" />
           FretesPro
         </Link>
         {NAV.map(item => (
-          <Link key={item.href} href={item.href} className={`nav-item ${pathname === item.href ? 'active' : ''}`}>
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`nav-item ${pathname === item.href ? 'active' : ''}`}
+          >
             <span className="nav-icon">{item.icon}</span>
             {item.label}
           </Link>
@@ -82,17 +88,20 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </button>
       </aside>
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      {/* COLUNA PRINCIPAL */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
+
+        {/* TOPBAR */}
         <div className="topbar">
           <div className="topbar-title">{TITLES[pathname] || 'FretesPro'}</div>
           <div className="flex gap8" style={{ alignItems: 'center' }}>
             <span className="muted" style={{ fontSize: '13px' }}>{mesAtual()}</span>
 
-            {/* Info do caminhão */}
+            {/* Info do caminhão — some no mobile via CSS */}
             {modelo && placaMasked && (
-              <div style={{
+              <div className="topbar-caminhao" style={{
                 display: 'flex', alignItems: 'center', gap: '6px',
-                background: 'var(--card)', border: '1px solid var(--border)',
+                background: 'var(--surface2)', border: '1px solid var(--border)',
                 borderRadius: '8px', padding: '4px 10px', fontSize: '12px',
               }}>
                 <span style={{ fontSize: '14px' }}>🚛</span>
@@ -101,10 +110,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               </div>
             )}
 
-            {/* Avatar + nome */}
+            {/* Avatar */}
             <div
               onClick={() => router.push('/configuracoes')}
-              style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '4px', cursor: 'pointer' }}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
             >
               <div style={{
                 width: '32px', height: '32px', borderRadius: '50%',
@@ -122,8 +131,25 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </div>
+
+        {/* CONTEÚDO — único elemento que faz scroll */}
         <div className="content">{children}</div>
       </div>
+
+      {/* BOTTOM NAV — mobile only */}
+      <nav className="bottom-nav">
+        {NAV.map(item => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`bottom-nav-item ${pathname === item.href ? 'active' : ''}`}
+          >
+            <span className="bnav-icon">{item.icon}</span>
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+
     </div>
   )
 }
