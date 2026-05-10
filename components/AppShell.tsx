@@ -17,7 +17,8 @@ const NAV = [
 
 const TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard', '/viagens': 'Viagens', '/despesas': 'Despesas',
-  '/relatorios': 'Relatórios', '/configuracoes': 'Configurações', '/corridas': 'Melhores Fretes',
+  '/relatorios': 'Relatórios', '/configuracoes': 'Configurações',
+  '/corridas': 'Melhores Fretes', '/planos': 'Planos', '/adicionar-caminhao': 'Adicionar Caminhão',
 }
 
 type Profile = {
