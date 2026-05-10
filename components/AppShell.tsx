@@ -142,23 +142,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="flex gap8" style={{ alignItems: 'center', flexShrink: 0 }}>
             <span className="muted topbar-caminhao" style={{ fontSize: '13px' }}>{mesAtual()}</span>
 
-            {/* TRUCK BADGE — clicável se tiver mais de 1 */}
+            {/* TRUCK BADGE — sempre clicável */}
             {activeTruck && (
               <div className="topbar-caminhao" ref={truckRef} style={{ position: 'relative' }}>
                 <div
                   className="truck-badge"
-                  onClick={() => caminhoes.length > 1 && setTruckPickerOpen(v => !v)}
-                  title={caminhoes.length > 1 ? 'Trocar caminhão' : activeTruck.modelo}
+                  onClick={() => setTruckPickerOpen(v => !v)}
+                  title="Gerenciar caminhões"
                 >
                   <span>🚛</span>
                   <span style={{ fontWeight: 600, maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{activeTruck.modelo}</span>
                   <span style={{ color: 'var(--muted)', letterSpacing: '1px' }}>{maskPlaca(activeTruck.placa)}</span>
-                  {caminhoes.length > 1 && <span style={{ color: 'var(--muted)', fontSize: '10px' }}>▾</span>}
+                  <span style={{ color: 'var(--muted)', fontSize: '10px' }}>▾</span>
                 </div>
 
-                {truckPickerOpen && caminhoes.length > 1 && (
+                {truckPickerOpen && (
                   <div className="truck-picker">
-                    <div style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em', padding: '4px 12px 8px' }}>Trocar caminhão</div>
+                    <div style={{ fontSize: '11px', color: 'var(--muted)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em', padding: '4px 12px 8px' }}>Meus caminhões</div>
                     {caminhoes.map(c => (
                       <div key={c.id} className={`truck-picker-item ${c.id === activeTruckId ? 'active' : ''}`} onClick={() => selectTruck(c.id)}>
                         <span>🚛</span>
@@ -169,6 +169,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                         {c.id === activeTruckId && <span style={{ fontSize: '14px' }}>✓</span>}
                       </div>
                     ))}
+                    <div style={{ height: '1px', background: 'var(--border)', margin: '6px 8px' }} />
+                    <div className="truck-picker-item" onClick={() => { setTruckPickerOpen(false); router.push('/adicionar-caminhao') }} style={{ color: 'var(--primary)' }}>
+                      <span>➕</span>
+                      <span style={{ fontWeight: 600 }}>Adicionar caminhão</span>
+                      <span style={{ fontSize: '11px', color: 'var(--muted)', marginLeft: 'auto' }}>R$47,90/mês</span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -237,21 +243,24 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <div><div className="drawer-name">{nome || 'Motorista'}</div><div className="drawer-plan">{planoLabel}</div></div>
             </div>
 
-            {caminhoes.length > 1 && (
-              <>
-                <div className="drawer-section">Meus caminhões</div>
-                {caminhoes.map(c => (
-                  <div key={c.id} className="drawer-item" style={c.id === activeTruckId ? { color: 'var(--primary)', fontWeight: 600 } : {}} onClick={() => selectTruck(c.id)}>
-                    <span className="drawer-item-icon">🚛</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.modelo}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{maskPlaca(c.placa)}</div>
-                    </div>
-                    {c.id === activeTruckId && <span>✓</span>}
-                  </div>
-                ))}
-              </>
-            )}
+            <div className="drawer-section">Meus caminhões</div>
+            {caminhoes.map(c => (
+              <div key={c.id} className="drawer-item" style={c.id === activeTruckId ? { color: 'var(--primary)', fontWeight: 600 } : {}} onClick={() => selectTruck(c.id)}>
+                <span className="drawer-item-icon">🚛</span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.modelo}</div>
+                  <div style={{ fontSize: '11px', color: 'var(--muted)' }}>{maskPlaca(c.placa)}</div>
+                </div>
+                {c.id === activeTruckId && <span>✓</span>}
+              </div>
+            ))}
+            <div className="drawer-item" style={{ color: 'var(--primary)' }} onClick={() => { setDrawerOpen(false); router.push('/adicionar-caminhao') }}>
+              <span className="drawer-item-icon">➕</span>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600 }}>Adicionar caminhão</div>
+                <div style={{ fontSize: '11px', color: 'var(--muted)' }}>R$47,90/mês por caminhão</div>
+              </div>
+            </div>
 
             <div className="drawer-section">Aplicativo</div>
             <button className="drawer-item" onClick={() => { setDrawerOpen(false); router.push('/configuracoes') }}><span className="drawer-item-icon">🎨</span>Personalizar app</button>
