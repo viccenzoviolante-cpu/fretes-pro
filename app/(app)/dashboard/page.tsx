@@ -158,6 +158,31 @@ export default function DashboardPage() {
         }
       </div>
 
+      {profile?.meta_financeira && profile.meta_financeira > 0 && (() => {
+        const meta = profile.meta_financeira
+        const pctReal = Math.round((lucro / meta) * 100)
+        const pctBar = Math.min(pctReal, 100)
+        const cor = pctReal < 50 ? 'var(--red)' : pctReal < 80 ? 'var(--yellow)' : 'var(--green)'
+        return (
+          <div className="card mb16">
+            <div className="card-header" style={{ marginBottom: '12px' }}>
+              <div className="card-title fw600" style={{ fontSize: '14px', color: 'var(--text)' }}>🎯 Meta do mês</div>
+              <span style={{ fontSize: '13px', fontWeight: 700, color: cor }}>{pctReal}%</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '10px' }}>
+              <span style={{ fontWeight: 700, color: cor, fontSize: '20px' }}>{fmtBRL(lucro)}</span>
+              <span style={{ color: 'var(--muted)', fontSize: '13px' }}>de {fmtBRL(meta)}</span>
+            </div>
+            <div style={{ background: 'var(--border)', borderRadius: '4px', height: '8px', overflow: 'hidden' }}>
+              <div style={{ width: `${pctBar}%`, height: '100%', background: cor, borderRadius: '4px', transition: 'width 0.5s ease' }} />
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '8px' }}>
+              {pctReal >= 100 ? '✅ Meta batida! Bora superar.' : `Faltam ${fmtBRL(Math.max(meta - lucro, 0))} para bater a meta`}
+            </div>
+          </div>
+        )
+      })()}
+
       <div className="card">
         <div className="card-header">
           <div className="card-title fw600" style={{ fontSize: '14px', color: 'var(--text)' }}>Últimas 3 viagens</div>
