@@ -16,7 +16,31 @@ export type UserRow = {
   trial_inicio: string
   trial_fim: string
   referred_by: string | null
+  foto_perfil: string | null
+  meta_financeira: number | null
+  onboarding_completo: boolean
   created_at: string
+}
+
+export type CaminhaoRow = {
+  id: string
+  user_id: string
+  apelido: string | null
+  modelo: string
+  placa: string
+  carroceria: string | null
+  kml_medio: number | null
+  capacidade_kg: number | null
+  tipos_carga: string[] | null
+  is_principal: boolean
+  plano_ativo: boolean
+  created_at: string
+}
+
+export function maskPlaca(placa: string): string {
+  const cleaned = placa.replace(/[-\s]/g, '')
+  if (cleaned.length <= 3) return placa
+  return `***${cleaned.slice(-3)}`
 }
 
 export type ViagemRow = {
@@ -96,6 +120,12 @@ export type Database = {
         Row: PromoCodeRow
         Insert: Omit<PromoCodeRow, 'id' | 'created_at'> & { id?: string; created_at?: string }
         Update: Partial<Omit<PromoCodeRow, 'id' | 'created_at'>>
+        Relationships: []
+      }
+      caminhoes: {
+        Row: CaminhaoRow
+        Insert: Omit<CaminhaoRow, 'id' | 'created_at'> & { id?: string; created_at?: string }
+        Update: Partial<Omit<CaminhaoRow, 'id' | 'user_id' | 'created_at'>>
         Relationships: []
       }
     }

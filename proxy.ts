@@ -24,14 +24,26 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const pathname = request.nextUrl.pathname
 
-  const isPublic = pathname.startsWith('/login') || pathname.startsWith('/cadastro')
+  const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/cadastro')
+  const isOnboarding = pathname.startsWith('/onboarding')
 
-  if (!user && !isPublic) {
+  if (!user && !isAuthPage) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
-  if (user && isPublic) {
+  if (user && isAuthPage) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
+  }
+
+  if (user && !isAuthPage && !isOnboarding) {
+    const { data: userData } = await supabase
+      .from('users')
+      .select('onboarding_completo')
+      .eq('id', user.id)
+      .single()
+    if (userData && !userData.onboarding_completo) {
+      return NextResponse.redirect(new URL('/onboarding', request.url))
+    }
   }
 
   return supabaseResponse
