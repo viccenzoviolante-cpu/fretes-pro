@@ -26,14 +26,17 @@ export async function proxy(request: NextRequest) {
 
   const isAuthPage = pathname.startsWith('/login') || pathname.startsWith('/cadastro')
   const isOnboarding = pathname.startsWith('/onboarding')
+  const isReferralPage = pathname.startsWith('/r/')
 
-  if (!user && !isAuthPage) {
+  if (!user && !isAuthPage && !isReferralPage) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
 
   if (user && isAuthPage) {
     return NextResponse.redirect(new URL('/dashboard', request.url))
   }
+
+  if (isReferralPage) return supabaseResponse
 
   if (user && !isAuthPage && !isOnboarding) {
     const { data: userData } = await supabase

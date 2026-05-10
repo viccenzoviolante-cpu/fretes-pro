@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
-// Cron diário: verifica indicações qualificadas e credita 1 mês grátis
+// Cron diário: verifica indicações cujo indicado JÁ PAGOU e credita 1 mês Starter ao indicador
 // Vercel Cron: roda todo dia às 03:00 BRT (06:00 UTC)
+// Regra: 1 amigo paga → indicador ganha 1 mês de Starter grátis (trial_fim + 30 dias)
 export async function GET(request: Request) {
   const authHeader = request.headers.get('authorization')
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
@@ -14,80 +15,45 @@ export async function GET(request: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   )
 
-  const DIAS_PARA_QUALIFICAR = 7
-  const AMIGOS_PARA_GANHAR = 5
-
-  // 1. Marcar indicações que atingiram 7 dias de uso como 'qualified'
-  const seteAnosAtras = new Date()
-  seteAnosAtras.setDate(seteAnosAtras.getDate() - DIAS_PARA_QUALIFICAR)
-
-  const { data: pendentes } = await supabase
+  // 1. Buscar todos os referrals com status 'pago' (indicado pagou, indicador ainda não foi recompensado)
+  const { data: pagos } = await supabase
     .from('referrals')
-    .select('id, referred_id')
-    .eq('status', 'pending')
+    .select('id, referrer_id')
+    .eq('status', 'pago')
 
-  if (pendentes && pendentes.length > 0) {
-    for (const ref of pendentes) {
-      const { data: referred } = await supabase
-        .from('users')
-        .select('created_at')
-        .eq('id', ref.referred_id)
-        .single()
-
-      if (referred && new Date(referred.created_at) <= seteAnosAtras) {
-        await supabase
-          .from('referrals')
-          .update({ status: 'qualified', qualified_at: new Date().toISOString() })
-          .eq('id', ref.id)
-      }
-    }
-  }
-
-  // 2. Verificar referrers que têm 5+ qualificados e ainda não foram recompensados
-  const { data: qualificados } = await supabase
-    .from('referrals')
-    .select('referrer_id')
-    .eq('status', 'qualified')
-
-  if (!qualificados || qualificados.length === 0) {
+  if (!pagos || pagos.length === 0) {
     return NextResponse.json({ ok: true, recompensados: 0 })
-  }
-
-  // Agrupar por referrer
-  const contagem: Record<string, number> = {}
-  for (const q of qualificados) {
-    contagem[q.referrer_id] = (contagem[q.referrer_id] || 0) + 1
   }
 
   let recompensados = 0
 
-  for (const [referrerId, count] of Object.entries(contagem)) {
-    if (count >= AMIGOS_PARA_GANHAR) {
-      // Extender trial_fim em 30 dias
-      const { data: user } = await supabase
+  for (const ref of pagos) {
+    // 2. Estender trial_fim do indicador em 30 dias (1 mês Starter grátis)
+    const { data: referrer } = await supabase
+      .from('users')
+      .select('trial_fim, plano')
+      .eq('id', ref.referrer_id)
+      .single()
+
+    if (referrer) {
+      // Base para calcular: se ainda em trial, usa trial_fim atual; se já expirou, usa hoje
+      const base = referrer.plano === 'trial' && new Date(referrer.trial_fim) > new Date()
+        ? new Date(referrer.trial_fim)
+        : new Date()
+      base.setDate(base.getDate() + 30)
+
+      await supabase
         .from('users')
-        .select('trial_fim')
-        .eq('id', referrerId)
-        .single()
+        .update({ trial_fim: base.toISOString() })
+        .eq('id', ref.referrer_id)
 
-      if (user) {
-        const novaData = new Date(user.trial_fim)
-        novaData.setDate(novaData.getDate() + 30)
+      // 3. Marcar referral como recompensado
+      await supabase
+        .from('referrals')
+        .update({ status: 'recompensado', rewarded_at: new Date().toISOString() })
+        .eq('id', ref.id)
 
-        await supabase
-          .from('users')
-          .update({ trial_fim: novaData.toISOString() })
-          .eq('id', referrerId)
-
-        // Marcar as qualificadas como 'rewarded'
-        await supabase
-          .from('referrals')
-          .update({ status: 'rewarded', rewarded_at: new Date().toISOString() })
-          .eq('referrer_id', referrerId)
-          .eq('status', 'qualified')
-
-        recompensados++
-      }
+      recompensados++
     }
   }
 

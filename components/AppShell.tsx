@@ -322,11 +322,11 @@ function ReferralCard() {
 
   return (
     <div style={{ fontSize: '13px' }}>
-      <div style={{ marginBottom: '8px' }}>Convide <strong>5 amigos</strong> que usem por <strong>7 dias</strong> → <strong>1 mês grátis</strong></div>
-      <div style={{ display: 'flex', gap: '4px', marginBottom: '8px' }}>
-        {[1,2,3,4,5].map(n => <div key={n} style={{ flex: 1, height: '6px', borderRadius: '3px', background: n <= usos ? 'var(--green)' : 'var(--border)' }} />)}
+      <div style={{ marginBottom: '10px', lineHeight: '1.5' }}>
+        Convide amigos — quando <strong>pagarem o app</strong>, você ganha <strong>1 mês Starter grátis</strong>.
+        Seu amigo ainda recebe <strong>10% off</strong> na primeira mensalidade.
       </div>
-      <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '10px' }}>{usos} de 5 amigos qualificados</div>
+      {usos > 0 && <div style={{ fontSize: '12px', color: 'var(--green)', marginBottom: '8px', fontWeight: 600 }}>✅ {usos} indicado{usos > 1 ? 's pagaram' : ' pagou'} — você ganhou {usos} mês{usos > 1 ? 'es' : ''} grátis</div>}
       <button className="btn btn-ghost btn-sm btn-full" onClick={copiar}>{copiado ? '✅ Link copiado!' : '🔗 Copiar link de convite'}</button>
     </div>
   )
@@ -351,7 +351,7 @@ function ReferralMini() {
 
   return (
     <div style={{ fontSize: '12px', color: 'var(--muted)', marginBottom: '4px' }}>
-      5 amigos × 7 dias → 1 mês grátis
+      Amigo paga → você ganha 1 mês grátis · ele ganha 10% off
       <button className="btn btn-ghost btn-sm btn-full" style={{ marginTop: '8px' }} onClick={copiar}>{copiado ? '✅ Copiado!' : '🔗 Copiar link'}</button>
     </div>
   )

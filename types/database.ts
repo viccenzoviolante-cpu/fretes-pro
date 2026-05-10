@@ -25,6 +25,7 @@ export type UserRow = {
   fretes_dia_contagem: number
   fretes_dia_data: string | null
   raio_km_max: number
+  desconto_referral: number
   created_at: string
 }
 
@@ -156,6 +157,20 @@ export type Database = {
         Row: FreteSalvoRow
         Insert: Omit<FreteSalvoRow, 'id' | 'salvo_em'> & { id?: string; salvo_em?: string }
         Update: Partial<Omit<FreteSalvoRow, 'id' | 'user_id' | 'salvo_em'>>
+        Relationships: []
+      }
+      referrals: {
+        Row: {
+          id: string; referrer_id: string; referred_id: string
+          status: string; desconto_aplicado: number
+          qualified_at: string | null; pagou_em: string | null
+          valor_pago: number | null; rewarded_at: string | null; created_at: string
+        }
+        Insert: {
+          referrer_id: string; referred_id: string; status?: string
+          desconto_aplicado?: number; id?: string; created_at?: string
+        }
+        Update: { status?: string; pagou_em?: string | null; valor_pago?: number | null; rewarded_at?: string | null }
         Relationships: []
       }
     }
