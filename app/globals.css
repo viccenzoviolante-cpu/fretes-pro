@@ -64,14 +64,32 @@ body { background: var(--bg); color: var(--text); font-family: -apple-system, Bl
   .sidebar { display: none; }
   .bottom-nav { display: flex; }
   .content { padding: 16px; padding-bottom: 80px; }
-  .topbar { padding: 10px 16px; }
+  .topbar { padding: 10px 14px; gap: 8px; }
+  .topbar-title { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 140px; }
   .topbar-caminhao { display: none; }
   .page-title { font-size: 18px; }
+  .page-header { margin-bottom: 14px; }
   .card-value { font-size: 20px; }
-  .modal { padding: 20px 16px; }
-  .flex-between { flex-wrap: wrap; gap: 10px; }
-  .btn-sm { font-size: 12px; padding: 4px 10px; }
+  .card { padding: 14px; }
+  .modal { padding: 20px 16px; max-height: 95vh; }
+  /* page-header com botão: empilha em coluna */
+  .page-header.flex-between { flex-direction: column; align-items: flex-start; gap: 10px; }
+  .page-header.flex-between .flex { flex-wrap: wrap; }
+  /* stat-row vira 2 colunas no celular */
+  .stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .stat-value { font-size: 13px; }
+  /* textos longos truncam com ellipsis em células de tabela */
+  td { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  th { white-space: nowrap; font-size: 11px; padding: 8px; }
+  td { padding: 10px 8px; }
+  /* botões não ficam com texto quebrado */
+  .btn { white-space: nowrap; }
+  .btn-sm { font-size: 12px; padding: 5px 10px; }
+  /* barra de progresso label */
+  .progress-labels { font-size: 11px; }
   .toast { bottom: 76px; right: 12px; left: 12px; text-align: center; }
+  /* nome do usuário na topbar some no mobile */
+  .topbar-nome { display: none; }
 }
 
 /* BUTTONS */
@@ -169,6 +187,14 @@ select option { background: var(--surface); }
 .drawer-item:hover { background: var(--surface2); }
 .drawer-item-icon { font-size: 16px; width: 22px; text-align: center; }
 .drawer-close { position: absolute; top: 16px; right: 16px; background: var(--surface2); border: none; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 14px; color: var(--muted); }
+
+/* TRUCK PICKER */
+.truck-badge { display: flex; align-items: center; gap: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; font-size: 12px; cursor: pointer; transition: border-color .15s; user-select: none; }
+.truck-badge:hover { border-color: var(--primary); }
+.truck-picker { position: absolute; top: calc(100% + 8px); right: 0; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 8px; min-width: 220px; z-index: 300; box-shadow: 0 8px 32px rgba(0,0,0,0.3); animation: fadeIn .15s; }
+.truck-picker-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; transition: background .12s; }
+.truck-picker-item:hover { background: var(--surface2); }
+.truck-picker-item.active { background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); font-weight: 600; }
 
 /* CORRIDAS — badge de usos gratuitos */
 .corridas-badge { display: inline-flex; align-items: center; gap: 6px; background: color-mix(in srgb, var(--yellow) 12%, transparent); border: 1px solid color-mix(in srgb, var(--yellow) 30%, transparent); color: var(--yellow); padding: 4px 12px; border-radius: 99px; font-size: 12px; font-weight: 600; }

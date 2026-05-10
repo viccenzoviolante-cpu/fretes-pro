@@ -8,6 +8,7 @@ export default function RelatoriosPage() {
   const [viagens, setViagens] = useState<ViagemRow[]>([])
   const [despesas, setDespesas] = useState<DespesaRow[]>([])
   const [loading, setLoading] = useState(true)
+  const [detalhe, setDetalhe] = useState<(ViagemRow & { _custo: number; _lucro: number }) | null>(null)
 
   const fetchData = useCallback(async () => {
     const supabase = createClient()
@@ -40,6 +41,7 @@ export default function RelatoriosPage() {
 
   const catsUsadas = [...new Set(despesas.map(d => d.categoria))]
   const todasCats = [...CATS_PADRAO, ...catsUsadas.filter(c => !CATS_PADRAO.includes(c))]
+  const despesasViagem = detalhe ? despesas.filter(d => d.viagem_id === detalhe.id).sort((a, b) => b.valor - a.valor) : []
 
   if (loading) return <div className="empty">Carregando...</div>
 
@@ -47,7 +49,7 @@ export default function RelatoriosPage() {
     <>
       <div className="page-header">
         <div className="page-title">Relatórios</div>
-        <div className="page-sub">Análise de desempenho</div>
+        <div className="page-sub">Toque em uma viagem para ver cada despesa</div>
       </div>
 
       <div className="grid grid-3 mb16">
@@ -56,7 +58,7 @@ export default function RelatoriosPage() {
         <div className="card"><div className="card-title">Lucro total</div><div className={`card-value ${lucro >= 0 ? 'green' : 'red'} fw600`}>{fmtBRL(lucro)}</div></div>
       </div>
 
-      {/* Ranking */}
+      {/* Ranking clicável */}
       <div className="card mb16">
         <div className="card-header">
           <div className="card-title fw600" style={{ fontSize: '14px', color: 'var(--text)' }}>Corridas por lucratividade</div>
@@ -64,20 +66,23 @@ export default function RelatoriosPage() {
         {!finalizadas.length ? <div className="empty">Nenhuma viagem finalizada ainda.</div> : (
           <div className="table-wrap">
             <table>
-              <thead><tr><th>#</th><th>Rota</th><th>Contratante</th><th>Frete</th><th>Custo</th><th>Lucro</th><th>Margem</th><th>Data</th></tr></thead>
+              <thead>
+                <tr><th>#</th><th>Rota</th><th>Frete</th><th>Custo</th><th>Lucro</th><th>Margem</th></tr>
+              </thead>
               <tbody>
                 {finalizadas.map((v, i) => {
                   const mg = margemPct(v.valor_frete, v._lucro)
                   return (
-                    <tr key={v.id}>
-                      <td className="muted" style={{ fontSize: '12px' }}>{i + 1}</td>
-                      <td><strong>{v.origem}</strong><br /><span className="muted" style={{ fontSize: '12px' }}>→ {v.destino}</span></td>
-                      <td>{v.contratante || '—'}</td>
-                      <td className="green fw600">{fmtBRL(v.valor_frete)}</td>
-                      <td className="red">{fmtBRL(v._custo)}</td>
-                      <td className={`${v._lucro >= 0 ? 'green' : 'red'} fw600`}>{fmtBRL(v._lucro)}</td>
+                    <tr key={v.id} onClick={() => setDetalhe(v)} style={{ cursor: 'pointer' }}>
+                      <td className="muted" style={{ fontSize: '12px', width: '28px' }}>{i + 1}</td>
+                      <td>
+                        <div style={{ fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '150px' }}>{v.origem}</div>
+                        <div className="muted" style={{ fontSize: '11px', whiteSpace: 'nowrap' }}>→ {v.destino}</div>
+                      </td>
+                      <td className="green fw600" style={{ whiteSpace: 'nowrap' }}>{fmtBRL(v.valor_frete)}</td>
+                      <td className="red" style={{ whiteSpace: 'nowrap' }}>{fmtBRL(v._custo)}</td>
+                      <td className={`${v._lucro >= 0 ? 'green' : 'red'} fw600`} style={{ whiteSpace: 'nowrap' }}>{fmtBRL(v._lucro)}</td>
                       <td><span className={`badge ${v._lucro < 0 ? 'badge-red' : mg >= 20 ? 'badge-green' : 'badge-yellow'}`}>{mg}%</span></td>
-                      <td className="muted" style={{ fontSize: '12px' }}>{fmtDate(v.data)}</td>
                     </tr>
                   )
                 })}
@@ -113,6 +118,83 @@ export default function RelatoriosPage() {
           </div>
         )}
       </div>
+
+      {/* MODAL DETALHE DA VIAGEM */}
+      {detalhe && (
+        <div className="modal-overlay" onClick={() => setDetalhe(null)}>
+          <div className="modal" style={{ maxWidth: '520px' }} onClick={e => e.stopPropagation()}>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '20px' }}>
+              <div>
+                <div style={{ fontSize: '17px', fontWeight: 800 }}>{detalhe.origem}</div>
+                <div style={{ color: 'var(--muted)', fontSize: '14px', marginTop: '2px' }}>→ {detalhe.destino}</div>
+                <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '4px' }}>
+                  {fmtDate(detalhe.data)}{detalhe.km ? ` · ${detalhe.km.toLocaleString('pt-BR')} km` : ''}{detalhe.contratante ? ` · ${detalhe.contratante}` : ''}
+                </div>
+              </div>
+              <button onClick={() => setDetalhe(null)} style={{ background: 'var(--surface2)', border: 'none', borderRadius: '50%', width: '28px', height: '28px', cursor: 'pointer', fontSize: '14px', color: 'var(--muted)', flexShrink: 0 }}>✕</button>
+            </div>
+
+            {/* KPIs */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '10px', marginBottom: '20px' }}>
+              {[
+                { label: 'Frete bruto', value: fmtBRL(detalhe.valor_frete), color: 'var(--green)' },
+                { label: 'Custo total', value: fmtBRL(detalhe._custo), color: 'var(--red)' },
+                { label: 'Lucro líquido', value: fmtBRL(detalhe._lucro), color: detalhe._lucro >= 0 ? 'var(--green)' : 'var(--red)' },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ background: 'var(--surface2)', borderRadius: '10px', padding: '12px', textAlign: 'center' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--muted)', marginBottom: '4px' }}>{label}</div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color }}>{value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Lista de despesas */}
+            <div style={{ fontSize: '12px', fontWeight: 600, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: '10px' }}>
+              Despesas desta viagem
+            </div>
+
+            {!despesasViagem.length
+              ? <div className="empty" style={{ padding: '16px' }}>Nenhuma despesa registrada nesta viagem.</div>
+              : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '12px' }}>
+                  {despesasViagem.map(d => (
+                    <div key={d.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'var(--surface2)', borderRadius: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span style={{ fontSize: '18px' }}>{CAT_ICONS[d.categoria] || DEFAULT_ICON}</span>
+                        <div>
+                          <div style={{ fontSize: '13px', fontWeight: 600 }}>{d.categoria}</div>
+                          <div style={{ fontSize: '11px', color: 'var(--muted)' }}>
+                            {d.litros ? `${d.litros}L · ` : ''}{fmtDate(d.data)}
+                          </div>
+                        </div>
+                      </div>
+                      <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--red)', whiteSpace: 'nowrap' }}>−{fmtBRL(d.valor)}</div>
+                    </div>
+                  ))}
+                </div>
+              )
+            }
+
+            {detalhe.descontos_nota > 0 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 12px', background: 'var(--surface2)', borderRadius: '8px', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <span style={{ fontSize: '18px' }}>📄</span>
+                  <div style={{ fontSize: '13px', fontWeight: 600 }}>Descontos na nota</div>
+                </div>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--red)', whiteSpace: 'nowrap' }}>−{fmtBRL(detalhe.descontos_nota)}</div>
+              </div>
+            )}
+
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: '14px', fontWeight: 600 }}>Margem da corrida</div>
+              <span className={`badge ${detalhe._lucro < 0 ? 'badge-red' : margemPct(detalhe.valor_frete, detalhe._lucro) >= 20 ? 'badge-green' : 'badge-yellow'}`} style={{ fontSize: '14px', padding: '4px 12px' }}>
+                {margemPct(detalhe.valor_frete, detalhe._lucro)}%
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 }
