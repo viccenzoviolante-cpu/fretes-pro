@@ -311,7 +311,7 @@ function ReferralCard() {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return
-      setLink(`${window.location.origin}/cadastro?ref=${user.id.slice(0, 8)}`)
+      setLink(`${window.location.origin}/r/${user.id.slice(0, 8)}`)
       supabase.from('referrals').select('id', { count: 'exact' }).eq('referrer_id', user.id).then(({ count }) => setUsos(count || 0))
     })
   }, [])
@@ -340,7 +340,7 @@ function ReferralMini() {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (!user) return
-      setLink(`${window.location.origin}/cadastro?ref=${user.id.slice(0, 8)}`)
+      setLink(`${window.location.origin}/r/${user.id.slice(0, 8)}`)
     })
   }, [])
 
