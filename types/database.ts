@@ -19,6 +19,7 @@ export type UserRow = {
   foto_perfil: string | null
   meta_financeira: number | null
   onboarding_completo: boolean
+  corridas_usos: number
   created_at: string
 }
 
