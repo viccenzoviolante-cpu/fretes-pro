@@ -12,12 +12,12 @@ const NAV = [
   { href: '/viagens', icon: '🚛', label: 'Viagens' },
   { href: '/despesas', icon: '💸', label: 'Despesas' },
   { href: '/relatorios', icon: '📈', label: 'Relatórios' },
-  { href: '/corridas', icon: '🎯', label: 'Corridas' },
+  { href: '/corridas', icon: '🔍', label: 'Fretes' },
 ]
 
 const TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard', '/viagens': 'Viagens', '/despesas': 'Despesas',
-  '/relatorios': 'Relatórios', '/configuracoes': 'Configurações', '/corridas': 'Corridas',
+  '/relatorios': 'Relatórios', '/configuracoes': 'Configurações', '/corridas': 'Melhores Fretes',
 }
 
 type Profile = {

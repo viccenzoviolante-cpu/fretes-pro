@@ -20,7 +20,30 @@ export type UserRow = {
   meta_financeira: number | null
   onboarding_completo: boolean
   corridas_usos: number
+  fretes_mes_contagem: number
+  fretes_mes_inicio: string | null
+  fretes_dia_contagem: number
+  fretes_dia_data: string | null
+  raio_km_max: number
   created_at: string
+}
+
+export type FreteSalvoRow = {
+  id: string
+  user_id: string
+  plataforma: string
+  frete_id: string
+  origem: string
+  destino: string
+  km: number | null
+  valor_frete: number
+  tipo_carga: string | null
+  peso_kg: number | null
+  custo_diesel_est: number | null
+  custo_pedagio_est: number | null
+  ganho_est: number | null
+  dados_raw: Record<string, unknown> | null
+  salvo_em: string
 }
 
 export type CaminhaoRow = {
@@ -127,6 +150,12 @@ export type Database = {
         Row: CaminhaoRow
         Insert: Omit<CaminhaoRow, 'id' | 'created_at'> & { id?: string; created_at?: string }
         Update: Partial<Omit<CaminhaoRow, 'id' | 'user_id' | 'created_at'>>
+        Relationships: []
+      }
+      fretes_salvos: {
+        Row: FreteSalvoRow
+        Insert: Omit<FreteSalvoRow, 'id' | 'salvo_em'> & { id?: string; salvo_em?: string }
+        Update: Partial<Omit<FreteSalvoRow, 'id' | 'user_id' | 'salvo_em'>>
         Relationships: []
       }
     }
