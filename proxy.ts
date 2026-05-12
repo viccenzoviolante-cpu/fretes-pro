@@ -41,11 +41,54 @@ export async function proxy(request: NextRequest) {
   if (user && !isAuthPage && !isOnboarding) {
     const { data: userData } = await supabase
       .from('users')
-      .select('onboarding_completo')
+      .select('onboarding_completo, plano, trial_fim, plano_fim')
       .eq('id', user.id)
       .single()
+
     if (userData && !userData.onboarding_completo) {
       return NextResponse.redirect(new URL('/onboarding', request.url))
+    }
+
+    if (userData) {
+      let plano = userData.plano
+
+      // Trial expirado → atualizar no DB e tratar como expired
+      if (plano === 'trial' && userData.trial_fim && new Date(userData.trial_fim) < new Date()) {
+        await supabase.from('users').update({ plano: 'expired' }).eq('id', user.id)
+        plano = 'expired'
+      }
+
+      // Plano ativo expirado → idem
+      if (plano === 'active' && userData.plano_fim && new Date(userData.plano_fim) < new Date()) {
+        await supabase.from('users').update({ plano: 'expired' }).eq('id', user.id)
+        plano = 'expired'
+      }
+
+      if (plano === 'expired') {
+        // Bloquear mutações nas rotas de API de escrita
+        const isWriteRoute =
+          request.method === 'POST' &&
+          (pathname.startsWith('/api/viagens') ||
+            pathname.startsWith('/api/despesas') ||
+            pathname.startsWith('/api/relatorios') ||
+            pathname.startsWith('/api/caminhoes') ||
+            pathname.startsWith('/api/roleta'))
+
+        if (isWriteRoute) {
+          return NextResponse.json({ error: 'Plano expirado' }, { status: 403 })
+        }
+
+        // Redirecionar páginas de app para /planos (exceto as permitidas)
+        const isAllowedWhileExpired =
+          pathname.startsWith('/planos') ||
+          pathname.startsWith('/configuracoes') ||
+          pathname.startsWith('/dashboard') ||
+          pathname.startsWith('/api/')
+
+        if (!isAllowedWhileExpired) {
+          return NextResponse.redirect(new URL('/planos', request.url))
+        }
+      }
     }
   }
 

@@ -28,6 +28,8 @@ export type UserRow = {
   desconto_referral: number
   roleta_saldo: number
   fretes_bonus: number
+  plano_fim: string | null
+  paghiper_transaction_id: string | null
   created_at: string
 }
 
