@@ -30,6 +30,8 @@ export type UserRow = {
   fretes_bonus: number
   plano_fim: string | null
   paghiper_transaction_id: string | null
+  asaas_customer_id: string | null
+  asaas_subscription_id: string | null
   created_at: string
 }
 
