@@ -72,7 +72,7 @@ export async function POST(req: Request) {
   })
 
   const data = await resp.json()
-  const result = data?.create_request
+  const result = data?.pix_create_request  // PagHiper PIX usa essa chave, não create_request
 
   if (!result || result.result !== 'success') {
     console.error('PagHiper error:', data)
