@@ -16,12 +16,14 @@ const CARROCERIAS = ['', 'Graneleiro', 'Baú', 'Tanque', 'Frigorífico', 'Plataf
 
 export default function ConfiguracoesPage() {
   const [profile, setProfile] = useState<UserRow | null>(null)
+  const [caminhaoId, setCaminhaoId] = useState<string | null>(null)
   const [nome, setNome] = useState('')
   const [telefone, setTelefone] = useState('')
   const [modelo, setModelo] = useState('')
   const [placa, setPlaca] = useState('')
   const [carroceria, setCarroceria] = useState('')
   const [kml, setKml] = useState('')
+  const [meta, setMeta] = useState('')
   const [tema, setTema] = useState('azul')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -31,16 +33,23 @@ export default function ConfiguracoesPage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    const { data } = await supabase.from('users').select('*').eq('id', user.id).single()
-    if (data) {
-      setProfile(data)
-      setNome(data.nome || '')
-      setTelefone(data.telefone || '')
-      setModelo(data.modelo_caminhao || '')
-      setPlaca(data.placa || '')
-      setCarroceria(data.carroceria || '')
-      setKml(data.kml_medio?.toString() || '')
-      setTema(data.tema || 'azul')
+    const [{ data: p }, { data: c }] = await Promise.all([
+      supabase.from('users').select('*').eq('id', user.id).single(),
+      supabase.from('caminhoes').select('*').eq('user_id', user.id).eq('is_principal', true).single(),
+    ])
+    if (p) {
+      setProfile(p)
+      setNome(p.nome || '')
+      setTelefone(p.telefone || '')
+      setTema(p.tema || 'azul')
+      setMeta(p.meta_financeira?.toString() || '')
+    }
+    if (c) {
+      setCaminhaoId(c.id)
+      setModelo(c.modelo || '')
+      setPlaca(c.placa || '')
+      setCarroceria(c.carroceria || '')
+      setKml(c.kml_medio?.toString() || '')
     }
     setLoading(false)
   }, [])
@@ -52,15 +61,31 @@ export default function ConfiguracoesPage() {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) return
-    await supabase.from('users').update({
-      nome: nome.trim() || null,
-      telefone: telefone.trim() || null,
-      modelo_caminhao: modelo.trim() || null,
-      placa: placa.trim().toUpperCase() || null,
-      carroceria: carroceria || null,
-      kml_medio: parseFloat(kml) || null,
-      tema,
-    }).eq('id', user.id)
+
+    const kmlNum = parseFloat(kml) || null
+    const metaNum = parseFloat(meta) || null
+
+    await Promise.all([
+      supabase.from('users').update({
+        nome: nome.trim() || null,
+        telefone: telefone.trim() || null,
+        modelo_caminhao: modelo.trim() || null,
+        placa: placa.trim().toUpperCase() || null,
+        carroceria: carroceria || null,
+        kml_medio: kmlNum,
+        meta_financeira: metaNum,
+        tema,
+      }).eq('id', user.id),
+      caminhaoId
+        ? supabase.from('caminhoes').update({
+            modelo: modelo.trim() || undefined,
+            placa: placa.trim().toUpperCase() || undefined,
+            carroceria: carroceria || undefined,
+            kml_medio: kmlNum ?? undefined,
+          }).eq('id', caminhaoId)
+        : Promise.resolve(),
+    ])
+
     setToast({ msg: 'Configurações salvas!', type: 'success' })
     setSaving(false)
   }
@@ -108,6 +133,10 @@ export default function ConfiguracoesPage() {
             <div className="field">
               <label>Telefone (WhatsApp)</label>
               <input type="tel" value={telefone} onChange={e => setTelefone(e.target.value)} placeholder="(11) 99999-9999" />
+            </div>
+            <div className="field">
+              <label>Meta financeira mensal (R$)</label>
+              <input type="number" value={meta} onChange={e => setMeta(e.target.value)} placeholder="Ex: 8000" min="0" step="100" />
             </div>
           </div>
         </div>

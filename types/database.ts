@@ -26,6 +26,8 @@ export type UserRow = {
   fretes_dia_data: string | null
   raio_km_max: number
   desconto_referral: number
+  roleta_saldo: number
+  fretes_bonus: number
   created_at: string
 }
 

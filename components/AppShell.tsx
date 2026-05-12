@@ -6,19 +6,20 @@ import { createClient } from '@/lib/supabase/client'
 import { mesAtual } from '@/lib/utils'
 import { maskPlaca } from '@/types/database'
 import type { Plano, CaminhaoRow } from '@/types/database'
+import RoletaModal from './RoletaModal'
 
 const NAV = [
   { href: '/dashboard', icon: '📊', label: 'Dashboard' },
   { href: '/viagens', icon: '🚛', label: 'Viagens' },
   { href: '/despesas', icon: '💸', label: 'Despesas' },
   { href: '/relatorios', icon: '📈', label: 'Relatórios' },
-  { href: '/corridas', icon: '🔍', label: 'Fretes' },
+  { href: '/fretes', icon: '🔍', label: 'Fretes' },
 ]
 
 const TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard', '/viagens': 'Viagens', '/despesas': 'Despesas',
   '/relatorios': 'Relatórios', '/configuracoes': 'Configurações',
-  '/corridas': 'Melhores Fretes', '/planos': 'Planos', '/adicionar-caminhao': 'Adicionar Caminhão',
+  '/fretes': 'Melhores Fretes', '/planos': 'Planos', '/adicionar-caminhao': 'Adicionar Caminhão',
 }
 
 type Profile = {
@@ -112,6 +113,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     ? Math.max(0, Math.ceil((new Date(profile.trial_fim).getTime() - Date.now()) / 86400000))
     : 0
   const planoLabel = profile?.plano === 'active' ? '✅ Pro ativo' : `⏱️ Trial — ${diasTrial}d`
+  const isTrial = profile?.plano !== 'active'
+  const isExpired = profile?.plano === 'expired'
+  const [bannerDismissed, setBannerDismissed] = useState(false)
+  const [expiredDismissed, setExpiredDismissed] = useState(false)
+  const [roletaOpen, setRoletaOpen] = useState(false)
+  const showBanner = isTrial && !isExpired && diasTrial <= 7 && diasTrial > 0 && !bannerDismissed
+  const bannerUrgente = diasTrial <= 3
 
   const Avatar = () => (
     <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: profile?.foto_perfil ? 'transparent' : 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: 700, color: '#fff', flexShrink: 0, overflow: 'hidden' }}>
@@ -131,6 +139,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </Link>
         ))}
         <div style={{ flex: 1 }} />
+        <button className="nav-item" onClick={() => setRoletaOpen(true)}>
+          <span className="nav-icon">🎰</span>Roleta
+        </button>
         <button className="nav-item" onClick={handleLogout} style={{ color: 'var(--red)' }}>
           <span className="nav-icon">🚪</span>Sair
         </button>
@@ -142,6 +153,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div className="topbar-title">{TITLES[pathname] || 'FretesPro'}</div>
           <div className="flex gap8" style={{ alignItems: 'center', flexShrink: 0 }}>
             <span className="muted topbar-caminhao" style={{ fontSize: '13px' }}>{mesAtual()}</span>
+
+            {/* BADGE TRIAL na topbar */}
+            {isTrial && profile && (
+              <button
+                onClick={() => router.push('/planos')}
+                style={{ fontSize: '11px', fontWeight: 700, padding: '3px 10px', borderRadius: '99px', border: 'none', cursor: 'pointer', whiteSpace: 'nowrap', background: diasTrial <= 3 ? 'var(--red)' : diasTrial <= 7 ? 'color-mix(in srgb, var(--yellow) 20%, transparent)' : 'color-mix(in srgb, var(--primary) 15%, transparent)', color: diasTrial <= 3 ? '#fff' : diasTrial <= 7 ? 'var(--yellow)' : 'var(--primary)' }}
+              >
+                {diasTrial > 0 ? `⏱ ${diasTrial}d de trial` : '🔒 Trial expirado'}
+              </button>
+            )}
 
             {/* TRUCK BADGE — sempre clicável */}
             {activeTruck && (
@@ -197,7 +218,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   </div>
                   <button className="dropdown-item" onClick={() => { setDropdownOpen(false); router.push('/configuracoes') }}><span className="dropdown-item-icon">🎨</span>Personalizar app</button>
                   <button className="dropdown-item" onClick={() => { setDropdownOpen(false); router.push('/configuracoes') }}><span className="dropdown-item-icon">👤</span>Informações do usuário</button>
-                  <button className="dropdown-item" onClick={() => { setDropdownOpen(false); router.push('/configuracoes') }}><span className="dropdown-item-icon">💳</span>Plano e pagamentos</button>
+                  <button className="dropdown-item" onClick={() => { setDropdownOpen(false); router.push('/planos') }}><span className="dropdown-item-icon">💳</span>Plano e pagamentos</button>
+                  <button className="dropdown-item" onClick={() => { setDropdownOpen(false); setRoletaOpen(true) }}><span className="dropdown-item-icon">🎰</span>Roleta diária</button>
                   {caminhoes.length > 1 && (
                     <>
                       <div className="dropdown-sep" />
@@ -221,7 +243,51 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <div className="content">{children}</div>
+        {/* BANNER TRIAL EXPIRANDO */}
+        {showBanner && (
+          <div style={{ background: bannerUrgente ? 'color-mix(in srgb, var(--red) 12%, transparent)' : 'color-mix(in srgb, var(--yellow) 10%, transparent)', borderBottom: `1px solid ${bannerUrgente ? 'color-mix(in srgb, var(--red) 30%, transparent)' : 'color-mix(in srgb, var(--yellow) 30%, transparent)'}`, padding: '10px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexShrink: 0 }}>
+            <span style={{ fontSize: '13px', color: bannerUrgente ? 'var(--red)' : 'var(--yellow)', fontWeight: 600 }}>
+              {bannerUrgente ? `🚨 Seu trial expira em ${diasTrial} dia${diasTrial > 1 ? 's' : ''}! Assine agora para não perder o acesso.` : `⏳ ${diasTrial} dias restantes de trial — assine e continue sem interrupção.`}
+            </span>
+            <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+              <button className="btn btn-primary btn-sm" onClick={() => router.push('/planos')}>Assinar →</button>
+              <button onClick={() => setBannerDismissed(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--muted)', fontSize: '16px', padding: '0 4px' }}>✕</button>
+            </div>
+          </div>
+        )}
+
+        <div className="content" style={{ position: 'relative' }}>
+          {children}
+
+          {/* OVERLAY PLANO EXPIRADO */}
+          {isExpired && !expiredDismissed && (
+            <div style={{ position: 'absolute', inset: 0, zIndex: 100, background: 'color-mix(in srgb, var(--bg) 92%, transparent)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+              <div className="card" style={{ maxWidth: '380px', width: '100%', textAlign: 'center', padding: '36px 28px' }}>
+                <div style={{ fontSize: '48px', marginBottom: '16px' }}>🔒</div>
+                <div style={{ fontSize: '20px', fontWeight: 800, marginBottom: '8px' }}>Seu acesso foi pausado</div>
+                <div style={{ fontSize: '14px', color: 'var(--muted)', lineHeight: '1.6', marginBottom: '8px' }}>
+                  Seu período de trial encerrou. Seus dados estão preservados por 30 dias.
+                </div>
+                <div style={{ fontSize: '13px', color: 'var(--muted)', marginBottom: '28px' }}>
+                  Assine agora e volte a registrar viagens, despesas e acompanhar seu lucro real.
+                </div>
+                <button
+                  className="btn btn-primary btn-full"
+                  style={{ fontSize: '15px', padding: '13px', marginBottom: '12px' }}
+                  onClick={() => router.push('/planos')}
+                >
+                  Assinar por R$67,90 →
+                </button>
+                <button
+                  onClick={() => setExpiredDismissed(true)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '13px', color: 'var(--muted)', textDecoration: 'underline' }}
+                >
+                  Ver meus dados (somente leitura)
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* BOTTOM NAV */}
@@ -266,6 +332,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div className="drawer-section">Aplicativo</div>
             <button className="drawer-item" onClick={() => { setDrawerOpen(false); router.push('/configuracoes') }}><span className="drawer-item-icon">🎨</span>Personalizar app</button>
             <button className="drawer-item" onClick={() => { setDrawerOpen(false); router.push('/configuracoes') }}><span className="drawer-item-icon">👤</span>Informações do usuário</button>
+            <button className="drawer-item" onClick={() => { setDrawerOpen(false); setRoletaOpen(true) }}><span className="drawer-item-icon">🎰</span>Roleta diária</button>
 
             <div className="drawer-section">Plano e pagamentos</div>
             <div style={{ padding: '0 16px 12px' }}>
@@ -282,6 +349,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </>
       )}
+      <RoletaModal open={roletaOpen} onClose={() => setRoletaOpen(false)} />
     </div>
   )
 }

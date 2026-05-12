@@ -44,7 +44,10 @@ export default function LoginPage() {
             <input type="email" value={email} onChange={e => setEmail(e.target.value)} required placeholder="seu@email.com" />
           </div>
           <div className="field">
-            <label>Senha</label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label>Senha</label>
+              <Link href="/esqueci-senha" style={{ fontSize: '12px', color: 'var(--primary)' }}>Esqueceu?</Link>
+            </div>
             <input type="password" value={senha} onChange={e => setSenha(e.target.value)} required placeholder="••••••••" />
           </div>
         </div>
