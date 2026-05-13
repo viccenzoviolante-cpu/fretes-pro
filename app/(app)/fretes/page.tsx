@@ -14,7 +14,7 @@ const MOCK_FRETES = [
   { id: 'f3', plataforma: 'fretebras', origem: 'São Paulo, SP', destino: 'Rio de Janeiro, RJ', km: 440, valor_frete: 3600, tipo_carga: 'Baú', peso_kg: 20000, custo_diesel_est: 168, custo_pedagio_est: 102, ganho_est: 3330 },
 ]
 
-type Frete = typeof MOCK_FRETES[0]
+type Frete = typeof MOCK_FRETES[0] & { pedagio_real?: boolean }
 
 export default function FretesPage() {
   const router = useRouter()
@@ -101,7 +101,32 @@ export default function FretesPage() {
     }
 
     await new Promise(r => setTimeout(r, 1200))
-    setFretes(MOCK_FRETES)
+
+    const fretesComPedagio = await Promise.all(
+      MOCK_FRETES.map(async (f) => {
+        try {
+          const res = await fetch('/api/qualp/rota', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ origem: f.origem, destino: f.destino }),
+          })
+          if (!res.ok) return { ...f, pedagio_real: false }
+          const data = await res.json()
+          const pedagio = data.pedagio_total
+          if (!pedagio || pedagio === 0) return { ...f, pedagio_real: false }
+          return {
+            ...f,
+            custo_pedagio_est: pedagio,
+            ganho_est: f.valor_frete - f.custo_diesel_est - pedagio,
+            pedagio_real: true,
+          }
+        } catch {
+          return { ...f, pedagio_real: false }
+        }
+      })
+    )
+
+    setFretes(fretesComPedagio)
     setBuscouAgora(true)
     setBuscando(false)
   }
@@ -191,7 +216,7 @@ export default function FretesPage() {
                 Busca filtrada pelo seu caminhão — capacidade, tipo de carga e raio de {profile?.raio_km_max || 200}km.
               </div>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '28px' }}>
-                {['⛽ Diesel calculado', '🛣️ Pedágio estimado', '📦 Filtrado pelo caminhão'].map(t => (
+                {['⛽ Diesel calculado', '🛣️ Pedágio real (QualP)', '📦 Filtrado pelo caminhão'].map(t => (
                   <span key={t} style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '99px', padding: '6px 14px', fontSize: '13px', whiteSpace: 'nowrap' }}>{t}</span>
                 ))}
               </div>
@@ -241,7 +266,7 @@ export default function FretesPage() {
                       <div className="corridas-detail">
                         <span>💰 Frete: <strong style={{ color: 'var(--text)' }}>{fmtBRL(f.valor_frete)}</strong></span>
                         <span>⛽ Diesel: <strong style={{ color: 'var(--red)' }}>−{fmtBRL(f.custo_diesel_est)}</strong></span>
-                        <span>🛣️ Pedágio: <strong style={{ color: 'var(--red)' }}>−{fmtBRL(f.custo_pedagio_est)}</strong></span>
+                        <span>🛣️ Pedágio{f.pedagio_real ? <span style={{ color: 'var(--green, #22c55e)', fontSize: '10px', fontWeight: 700, marginLeft: '3px' }}>REAL</span> : ''}: <strong style={{ color: 'var(--red)' }}>−{fmtBRL(f.custo_pedagio_est)}</strong></span>
                       </div>
                       <div style={{ display: 'flex', gap: '8px' }}>
                         <button className={`btn btn-sm ${jaSalvo ? 'btn-primary' : 'btn-ghost'}`} onClick={() => !jaSalvo && salvarFrete(f)} disabled={salvando === f.id || jaSalvo} style={{ whiteSpace: 'nowrap' }}>

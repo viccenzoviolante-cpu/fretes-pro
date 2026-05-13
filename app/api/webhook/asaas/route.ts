@@ -14,6 +14,11 @@ function addMonths(date: Date, n: number) {
 }
 
 export async function POST(req: NextRequest) {
+  const token = req.headers.get('asaas-access-token')
+  if (token !== process.env.ASAAS_WEBHOOK_TOKEN) {
+    return NextResponse.json({ error: 'unauthorized' }, { status: 401 })
+  }
+
   const body = await req.json()
   const { event, payment } = body as {
     event: string
