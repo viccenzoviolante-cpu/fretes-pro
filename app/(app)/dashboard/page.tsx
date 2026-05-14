@@ -107,6 +107,9 @@ export default function DashboardPage() {
     <>
       {toast && <Toast msg={toast.msg} type={toast.type} onClose={() => setToast(null)} />}
 
+      {/* Banner Raio-X */}
+      <BannerAnalise viagens={viagens} router={router} />
+
       <div className="page-header flex-between">
         <div>
           <div className="page-title">Dashboard</div>
@@ -214,4 +217,60 @@ export default function DashboardPage() {
       </div>
     </>
   )
+}
+
+// Banner que aparece no dashboard quando o Raio-X está disponível
+function BannerAnalise({ viagens, router }: { viagens: ViagemRow[]; router: ReturnType<typeof useRouter> }) {
+  const [status, setStatus] = useState<{ disponivel?: boolean; count?: number; pct_barra?: number; dias_restantes?: number } | null>(null)
+
+  useEffect(() => {
+    fetch('/api/analise/gerar').then(r => r.ok ? r.json() : null).then(d => setStatus(d))
+  }, [])
+
+  if (!status) return null
+
+  // Primeira análise disponível
+  if (status.count === 0 && status.disponivel) {
+    return (
+      <div onClick={() => router.push('/analise')} style={{ background: 'linear-gradient(135deg, color-mix(in srgb, var(--primary) 10%, var(--surface)), color-mix(in srgb, #8B5CF6 8%, var(--surface)))', border: '1px solid color-mix(in srgb, var(--primary) 30%, transparent)', borderRadius: '14px', padding: '14px 16px', marginBottom: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ fontSize: '28px', flexShrink: 0 }}>🧠</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 800, fontSize: '14px' }}>Seu Raio-X está pronto — gratuito!</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>Veja onde seu dinheiro vai: rota campeã, rota que sangra e mais</div>
+        </div>
+        <span style={{ color: 'var(--primary)', fontSize: '18px', flexShrink: 0 }}>→</span>
+      </div>
+    )
+  }
+
+  // Barra de progresso (cooldown ativo)
+  if (status.count && status.count > 0 && !status.disponivel && status.pct_barra !== undefined) {
+    return (
+      <div onClick={() => router.push('/analise')} style={{ background: 'var(--surface2)', border: '1px solid var(--border)', borderRadius: '12px', padding: '12px 16px', marginBottom: '16px', cursor: 'pointer' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+          <span style={{ fontSize: '13px', fontWeight: 600 }}>🧠 Próximo Raio-X</span>
+          <span style={{ fontSize: '12px', color: 'var(--muted)' }}>em {status.dias_restantes} dias</span>
+        </div>
+        <div style={{ background: 'var(--border)', borderRadius: '99px', height: '5px', overflow: 'hidden' }}>
+          <div style={{ height: '100%', borderRadius: '99px', background: 'linear-gradient(90deg, var(--primary), #8B5CF6)', width: `${status.pct_barra}%` }} />
+        </div>
+      </div>
+    )
+  }
+
+  // Novo raio-x disponível (pago)
+  if (status.count && status.count > 0 && status.disponivel) {
+    return (
+      <div onClick={() => router.push('/analise')} style={{ background: 'color-mix(in srgb, #F59E0B 8%, var(--surface))', border: '1px solid color-mix(in srgb, #F59E0B 35%, transparent)', borderRadius: '14px', padding: '14px 16px', marginBottom: '16px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ fontSize: '28px', flexShrink: 0 }}>🧠</div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 800, fontSize: '14px' }}>Novo Raio-X disponível</div>
+          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>Análise do mês pronta para você</div>
+        </div>
+        <span style={{ color: '#F59E0B', fontSize: '18px', flexShrink: 0 }}>→</span>
+      </div>
+    )
+  }
+
+  return null
 }

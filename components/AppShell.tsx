@@ -20,6 +20,7 @@ const TITLES: Record<string, string> = {
   '/dashboard': 'Dashboard', '/viagens': 'Viagens', '/despesas': 'Despesas',
   '/relatorios': 'Relatórios', '/configuracoes': 'Configurações',
   '/fretes': 'Melhores Fretes', '/planos': 'Planos', '/adicionar-caminhao': 'Adicionar Caminhão',
+  '/analise': 'Raio-X do Mês',
 }
 
 type Profile = {
