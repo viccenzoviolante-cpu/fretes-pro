@@ -1,19 +1,23 @@
 import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
+// Prêmios calibrados para 60% de margem líquida a 50% de cache hit (R$0,195/busca)
+// Jackpot +12 (era +30 — inviável financeiramente)
+// Nunca dá "nada" — sempre entrega algo
 export const PRIZES = [
-  { id: 'jackpot', label: '+30 buscas', short: '+30', emoji: '🔥', tipo: 'busca',  valor: 30 },
-  { id: 'grande',  label: '+10 buscas', short: '+10', emoji: '⭐', tipo: 'busca',  valor: 10 },
-  { id: 'bom',     label: '+5 buscas',  short: '+5',  emoji: '🚀', tipo: 'busca',  valor: 5  },
-  { id: 'normal',  label: '+3 buscas',  short: '+3',  emoji: '🔍', tipo: 'busca',  valor: 3  },
-  { id: 'roleta3', label: '+3 roletas', short: '+3🎡', emoji: '🎡', tipo: 'roleta', valor: 3  },
+  { id: 'jackpot', label: '+12 buscas', short: '+12', emoji: '🔥', tipo: 'busca',  valor: 12 },
+  { id: 'grande',  label: '+6 buscas',  short: '+6',  emoji: '⭐', tipo: 'busca',  valor: 6  },
+  { id: 'bom',     label: '+4 buscas',  short: '+4',  emoji: '🚀', tipo: 'busca',  valor: 4  },
+  { id: 'normal',  label: '+2 buscas',  short: '+2',  emoji: '🔍', tipo: 'busca',  valor: 2  },
   { id: 'pequeno', label: '+1 busca',   short: '+1',  emoji: '👆', tipo: 'busca',  valor: 1  },
-  { id: 'mini',    label: '+2 roletas', short: '+2🎲', emoji: '🎲', tipo: 'roleta', valor: 2  },
+  { id: 'roleta1', label: '+1 giro',    short: '+1🎡', emoji: '🎡', tipo: 'roleta', valor: 1  },
+  { id: 'mini',    label: '+2 giros',   short: '+2🎲', emoji: '🎲', tipo: 'roleta', valor: 2  },
 ]
 
-// Soma = 100 em ambos
-export const PROBS_STARTER = [1, 4, 8, 17, 10, 30, 30]
-export const PROBS_PRO     = [2, 10, 18, 30, 8, 22, 10]
+// Starter: EV 2,44 buscas/giro → custo R$0,476 → líquido 61,4% (R$37/30 giros, 50% cache)
+// Pro: EV 2,82 buscas/giro → custo R$0,55 → líquido ~55% (Pro já paga mais no plano)
+export const PROBS_STARTER = [1,  5, 10, 25, 39, 10, 10]
+export const PROBS_PRO     = [2,  8, 15, 28, 32,  8,  7]
 
 function sortear(probs: number[]) {
   const total = probs.reduce((a, b) => a + b, 0)

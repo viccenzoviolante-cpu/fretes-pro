@@ -5,13 +5,13 @@ import type { UserRow } from '@/types/database'
 import { PROBS_STARTER, PROBS_PRO } from '@/app/api/roleta/girar/route'
 
 const PRIZES = [
-  { id: 'jackpot', label: '+30 buscas', short: '+30',  emoji: '🔥', tipo: 'busca',  valor: 30, color: '#F59E0B', glow: '#FCD34D' },
-  { id: 'grande',  label: '+10 buscas', short: '+10',  emoji: '⭐', tipo: 'busca',  valor: 10, color: '#8B5CF6', glow: '#C4B5FD' },
-  { id: 'bom',     label: '+5 buscas',  short: '+5',   emoji: '🚀', tipo: 'busca',  valor: 5,  color: '#10B981', glow: '#6EE7B7' },
-  { id: 'normal',  label: '+3 buscas',  short: '+3',   emoji: '🔍', tipo: 'busca',  valor: 3,  color: '#3B82F6', glow: '#93C5FD' },
-  { id: 'roleta3', label: '+3 roletas', short: '+3🎡', emoji: '🎡', tipo: 'roleta', valor: 3,  color: '#EC4899', glow: '#F9A8D4' },
+  { id: 'jackpot', label: '+12 buscas', short: '+12',  emoji: '🔥', tipo: 'busca',  valor: 12, color: '#F59E0B', glow: '#FCD34D' },
+  { id: 'grande',  label: '+6 buscas',  short: '+6',   emoji: '⭐', tipo: 'busca',  valor: 6,  color: '#8B5CF6', glow: '#C4B5FD' },
+  { id: 'bom',     label: '+4 buscas',  short: '+4',   emoji: '🚀', tipo: 'busca',  valor: 4,  color: '#10B981', glow: '#6EE7B7' },
+  { id: 'normal',  label: '+2 buscas',  short: '+2',   emoji: '🔍', tipo: 'busca',  valor: 2,  color: '#3B82F6', glow: '#93C5FD' },
   { id: 'pequeno', label: '+1 busca',   short: '+1',   emoji: '👆', tipo: 'busca',  valor: 1,  color: '#F97316', glow: '#FED7AA' },
-  { id: 'mini',    label: '+2 roletas', short: '+2🎲', emoji: '🎲', tipo: 'roleta', valor: 2,  color: '#06B6D4', glow: '#A5F3FC' },
+  { id: 'roleta1', label: '+1 giro',    short: '+1🎡', emoji: '🎡', tipo: 'roleta', valor: 1,  color: '#EC4899', glow: '#F9A8D4' },
+  { id: 'mini',    label: '+2 giros',   short: '+2🎲', emoji: '🎲', tipo: 'roleta', valor: 2,  color: '#06B6D4', glow: '#A5F3FC' },
 ]
 
 const N = PRIZES.length
@@ -261,24 +261,43 @@ export default function RoletaModal({ open, onClose }: { open: boolean; onClose:
           )}
         </div>
 
-        {/* Order bump */}
-        <div style={{
-          background: 'linear-gradient(135deg, color-mix(in srgb, #F59E0B 12%, var(--surface2)), color-mix(in srgb, #8B5CF6 12%, var(--surface2)))',
-          border: '1px solid color-mix(in srgb, #F59E0B 30%, transparent)',
-          borderRadius: '14px', padding: '16px', cursor: 'pointer',
-          display: 'flex', gap: '14px', alignItems: 'center',
-        }}
-          onClick={() => alert('Asaas em breve.')}
-        >
-          {/* Mini visual da roleta */}
-          <div style={{ flexShrink: 0, width: '52px', height: '52px', borderRadius: '50%', background: 'conic-gradient(#F59E0B 0% 14%, #8B5CF6 14% 28%, #10B981 28% 43%, #3B82F6 43% 57%, #EC4899 57% 72%, #F97316 72% 86%, #06B6D4 86% 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 3px 12px rgba(0,0,0,0.3)' }}>
-            <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>🚛</div>
+        {/* Order bumps — 2 packs */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          {/* Pack entrada */}
+          <div style={{
+            background: 'var(--surface2)', border: '1px solid var(--border)',
+            borderRadius: '14px', padding: '14px', cursor: 'pointer',
+            display: 'flex', gap: '12px', alignItems: 'center',
+          }} onClick={() => alert('Asaas em breve.')}>
+            <div style={{ flexShrink: 0, width: '44px', height: '44px', borderRadius: '50%', background: 'conic-gradient(#F59E0B 0% 14%, #8B5CF6 14% 28%, #10B981 28% 43%, #3B82F6 43% 57%, #F97316 57% 72%, #EC4899 72% 86%, #06B6D4 86% 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--bg)', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🚛</div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '13px', fontWeight: 800 }}>15 giros — <span style={{ color: '#10B981' }}>R$22,00</span></div>
+              <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>R$1,47/giro · boa entrada</div>
+            </div>
+            <span style={{ fontSize: '18px', color: 'var(--primary)', flexShrink: 0 }}>→</span>
           </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: '14px', fontWeight: 800 }}>🛒 30 giros — <span style={{ color: '#F59E0B' }}>R$30,00</span></div>
-            <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '3px' }}>R$1 por giro · chance de ganhar +30 buscas 🔥</div>
+
+          {/* Pack principal */}
+          <div style={{
+            background: 'linear-gradient(135deg, color-mix(in srgb, #F59E0B 12%, var(--surface2)), color-mix(in srgb, #8B5CF6 10%, var(--surface2)))',
+            border: '1px solid color-mix(in srgb, #F59E0B 35%, transparent)',
+            borderRadius: '14px', padding: '14px', cursor: 'pointer',
+            display: 'flex', gap: '12px', alignItems: 'center',
+          }} onClick={() => alert('Asaas em breve.')}>
+            <div style={{ flexShrink: 0 }}>
+              <div style={{ fontSize: '9px', fontWeight: 800, color: '#F59E0B', textTransform: 'uppercase', textAlign: 'center', marginBottom: '2px' }}>Melhor</div>
+              <div style={{ width: '44px', height: '44px', borderRadius: '50%', background: 'conic-gradient(#F59E0B 0% 14%, #8B5CF6 14% 28%, #10B981 28% 43%, #3B82F6 43% 57%, #F97316 57% 72%, #EC4899 72% 86%, #06B6D4 86% 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 10px rgba(245,158,11,0.4)' }}>
+                <div style={{ width: '18px', height: '18px', borderRadius: '50%', background: 'var(--bg)', fontSize: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>🚛</div>
+              </div>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '14px', fontWeight: 800 }}>30 giros — <span style={{ color: '#F59E0B' }}>R$37,00</span></div>
+              <div style={{ fontSize: '11px', color: 'var(--muted)', marginTop: '2px' }}>R$1,23/giro · chance de 🔥 +12 buscas</div>
+            </div>
+            <span style={{ fontSize: '20px', color: '#F59E0B', flexShrink: 0 }}>→</span>
           </div>
-          <span style={{ fontSize: '20px', color: 'var(--primary)', flexShrink: 0 }}>→</span>
         </div>
 
         <style>{`
