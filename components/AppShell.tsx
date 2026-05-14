@@ -157,7 +157,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {/* COLUNA PRINCIPAL */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
         <div className="topbar">
-          <div className="topbar-title">{TITLES[pathname] || 'FretesPro'}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="topbar-title">{TITLES[pathname] || 'FretesPro'}</div>
+            {/* Botão rápido da roleta — só mobile (sidebar cobre o desktop) */}
+            <button
+              onClick={() => setRoletaOpen(true)}
+              className="roleta-topbar-btn"
+              title="Girar roleta"
+            >
+              🎰
+            </button>
+          </div>
           <div className="flex gap8" style={{ alignItems: 'center', flexShrink: 0 }}>
             <span className="muted topbar-caminhao" style={{ fontSize: '13px' }}>{mesAtual()}</span>
 
