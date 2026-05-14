@@ -1,20 +1,21 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 import { fmtBRL, fmtDate } from '@/lib/utils'
 import type { UserRow, FreteSalvoRow } from '@/types/database'
+import type { FreteNorm } from '@/app/api/fretes/buscar/route'
 
 const LIMITE_PRO_DIA = 10
 const LIMITE_FREE_MES = 5
 
-const MOCK_FRETES = [
-  { id: 'f1', plataforma: 'fretebras', origem: 'São Paulo, SP', destino: 'Curitiba, PR', km: 408, valor_frete: 3200, tipo_carga: 'Granel', peso_kg: 22000, custo_diesel_est: 156, custo_pedagio_est: 89, ganho_est: 2955 },
-  { id: 'f2', plataforma: 'fretebras', origem: 'Campinas, SP', destino: 'Belo Horizonte, MG', km: 590, valor_frete: 4800, tipo_carga: 'Frigorífico', peso_kg: 18000, custo_diesel_est: 226, custo_pedagio_est: 124, ganho_est: 4450 },
-  { id: 'f3', plataforma: 'fretebras', origem: 'São Paulo, SP', destino: 'Rio de Janeiro, RJ', km: 440, valor_frete: 3600, tipo_carga: 'Baú', peso_kg: 20000, custo_diesel_est: 168, custo_pedagio_est: 102, ganho_est: 3330 },
-]
+const PLATAFORMA_CONFIG: Record<string, { label: string; url: string; cor: string }> = {
+  fretebras:   { label: 'FreteBras',   url: 'https://www.fretebras.com.br',   cor: '#f59e0b' },
+  fretecarga:  { label: 'FreteCarga',  url: 'https://www.fretecarga.com.br',  cor: '#3b82f6' },
+  fretebarato: { label: 'FreteBarato', url: 'https://www.fretebarato.com.br', cor: '#10b981' },
+}
 
-type Frete = typeof MOCK_FRETES[0] & { pedagio_real?: boolean }
+type Frete = FreteNorm & { pedagio_real?: boolean }
 
 export default function FretesPage() {
   const router = useRouter()
@@ -26,6 +27,15 @@ export default function FretesPage() {
   const [aba, setAba] = useState<'buscar' | 'salvos'>('buscar')
   const [salvando, setSalvando] = useState<string | null>(null)
   const [buscouAgora, setBuscouAgora] = useState(false)
+  const [isMock, setIsMock] = useState(true)
+
+  // Overlay da plataforma
+  const [overlayUrl, setOverlayUrl] = useState<string | null>(null)
+  const [overlayLabel, setOverlayLabel] = useState('')
+  const snoozeRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  // Modal "viagem iniciada?"
+  const [showViagemModal, setShowViagemModal] = useState(false)
 
   const fetchData = useCallback(async () => {
     const supabase = createClient()
@@ -42,17 +52,15 @@ export default function FretesPage() {
 
   useEffect(() => {
     fetchData()
-    // Refetch ao voltar para a aba/janela (ex: após girar a roleta)
     const onFocus = () => fetchData()
     window.addEventListener('focus', onFocus)
     return () => window.removeEventListener('focus', onFocus)
   }, [fetchData])
 
-  function verificarLimite(): { pode: boolean; motivo?: string; restantes: number; usandoBonus: boolean } {
+  function verificarLimite() {
     if (!profile) return { pode: false, motivo: 'Carregando...', restantes: 0, usandoBonus: false }
     const isPro = profile.plano === 'active'
     const bonus = profile.fretes_bonus || 0
-
     if (isPro) {
       const hoje = new Date().toISOString().slice(0, 10)
       const mesmodia = profile.fretes_dia_data === hoje
@@ -100,10 +108,14 @@ export default function FretesPage() {
       setProfile(prev => prev ? { ...prev, fretes_mes_contagem: novoCount, fretes_mes_inicio: hoje } : prev)
     }
 
-    await new Promise(r => setTimeout(r, 1200))
+    // Busca fretes das plataformas
+    const apiRes = await fetch('/api/fretes/buscar')
+    const { fretes: rawFretes, sources } = await apiRes.json()
+    setIsMock(sources.mock)
 
+    // Enriquece com pedágio real via QualP
     const fretesComPedagio = await Promise.all(
-      MOCK_FRETES.map(async (f) => {
+      (rawFretes as Frete[]).map(async (f) => {
         try {
           const res = await fetch('/api/qualp/rota', {
             method: 'POST',
@@ -153,24 +165,90 @@ export default function FretesPage() {
     setSalvos(prev => prev.filter(s => s.id !== id))
   }
 
+  function abrirPlataforma(plataforma: string) {
+    const cfg = PLATAFORMA_CONFIG[plataforma] ?? PLATAFORMA_CONFIG.fretebras
+    setOverlayLabel(cfg.label)
+    setOverlayUrl(cfg.url)
+  }
+
+  function fecharOverlay() {
+    setOverlayUrl(null)
+    if (snoozeRef.current) clearTimeout(snoozeRef.current)
+    setShowViagemModal(true)
+  }
+
+  function snoozeViagem() {
+    setShowViagemModal(false)
+    snoozeRef.current = setTimeout(() => setShowViagemModal(true), 5 * 60 * 1000)
+  }
+
   if (loading) return <div className="empty">Carregando...</div>
 
   const limite = verificarLimite()
   const isPro = profile?.plano === 'active'
   const bonus = profile?.fretes_bonus || 0
   const idsSalvos = new Set(salvos.map(s => `${s.plataforma}:${s.frete_id}`))
-
   const buscasRestantes = isPro
     ? LIMITE_PRO_DIA - (profile?.fretes_dia_data === new Date().toISOString().slice(0, 10) ? (profile?.fretes_dia_contagem || 0) : 0)
     : LIMITE_FREE_MES - (profile?.fretes_mes_inicio?.slice(0, 7) === new Date().toISOString().slice(0, 7) ? (profile?.fretes_mes_contagem || 0) : 0)
 
+  const fontes = [...new Set(fretes.map(f => PLATAFORMA_CONFIG[f.plataforma]?.label ?? f.plataforma))].join(' · ')
+
   return (
     <>
+      {/* Overlay da plataforma */}
+      {overlayUrl && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, display: 'flex', flexDirection: 'column', background: '#000' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px', background: 'var(--surface)', borderBottom: '1px solid var(--border)', flexShrink: 0 }}>
+            <span style={{ fontSize: '13px', color: 'var(--muted)', fontWeight: 600 }}>🔗 {overlayLabel}</span>
+            <button
+              onClick={fecharOverlay}
+              style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '8px', padding: '7px 14px', fontSize: '13px', fontWeight: 700, cursor: 'pointer' }}
+            >
+              ← Retornar ao FretesPro ✕
+            </button>
+          </div>
+          <iframe
+            src={overlayUrl}
+            style={{ flex: 1, border: 'none', width: '100%' }}
+            allow="storage-access"
+            title={overlayLabel}
+          />
+        </div>
+      )}
+
+      {/* Modal "viagem iniciada?" */}
+      {showViagemModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9998, background: 'rgba(0,0,0,.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+          <div className="card" style={{ maxWidth: '360px', width: '100%', textAlign: 'center', padding: '32px 24px' }}>
+            <div style={{ fontSize: '36px', marginBottom: '12px' }}>🚛</div>
+            <div style={{ fontSize: '17px', fontWeight: 800, marginBottom: '8px' }}>A viagem foi iniciada?</div>
+            <div style={{ color: 'var(--muted)', fontSize: '13px', marginBottom: '24px', lineHeight: 1.6 }}>
+              Você saiu de {overlayLabel || 'da plataforma'}. Quer registrar uma nova viagem agora?
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button className="btn btn-primary" onClick={() => { setShowViagemModal(false); router.push('/viagens?nova=1') }}>
+                ✅ Sim, iniciar viagem
+              </button>
+              <button className="btn btn-ghost" onClick={() => setShowViagemModal(false)}>
+                Não, ainda não
+              </button>
+              <button
+                onClick={snoozeViagem}
+                style={{ background: 'none', border: 'none', color: 'var(--muted)', fontSize: '12px', cursor: 'pointer', padding: '4px' }}
+              >
+                ⏰ Me pergunte em 5 minutos
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="page-header flex-between">
         <div>
           <div className="page-title">🔍 Melhores Fretes</div>
-          <div className="page-sub">FreteBras · filtrado pelo seu caminhão</div>
+          <div className="page-sub">{buscouAgora && !isMock ? fontes : 'FreteCarga · FreteBarato · FreteBras'} · filtrado pelo seu caminhão</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '4px' }}>
           <span style={{ fontSize: '12px', color: 'var(--muted)', background: 'var(--surface)', border: '1px solid var(--border)', padding: '4px 10px', borderRadius: '99px', whiteSpace: 'nowrap' }}>
@@ -213,7 +291,7 @@ export default function FretesPage() {
               <div style={{ fontSize: '48px', marginBottom: '16px' }}>🗺️</div>
               <div style={{ fontSize: '18px', fontWeight: 700, marginBottom: '8px' }}>Encontre o melhor frete agora</div>
               <div style={{ color: 'var(--muted)', fontSize: '14px', maxWidth: '340px', margin: '0 auto 28px', lineHeight: '1.6' }}>
-                Busca filtrada pelo seu caminhão — capacidade, tipo de carga e raio de {profile?.raio_km_max || 200}km.
+                Busca nas 3 plataformas simultaneamente — filtrada pelo seu caminhão, capacidade e raio de {profile?.raio_km_max || 200}km.
               </div>
               <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', justifyContent: 'center', marginBottom: '28px' }}>
                 {['⛽ Diesel calculado', '🛣️ Pedágio real (QualP)', '📦 Filtrado pelo caminhão'].map(t => (
@@ -238,7 +316,7 @@ export default function FretesPage() {
           {buscando && (
             <div style={{ textAlign: 'center', padding: '48px 24px' }}>
               <div style={{ fontSize: '36px', marginBottom: '16px', animation: 'spin 1s linear infinite', display: 'inline-block' }}>🔄</div>
-              <div style={{ fontSize: '15px', color: 'var(--muted)' }}>Buscando os melhores fretes perto de você...</div>
+              <div style={{ fontSize: '15px', color: 'var(--muted)' }}>Consultando FreteCarga, FreteBarato e FreteBras...</div>
               <style>{`@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}`}</style>
             </div>
           )}
@@ -248,14 +326,18 @@ export default function FretesPage() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
                 {fretes.map((f, i) => {
                   const jaSalvo = idsSalvos.has(`${f.plataforma}:${f.id}`)
+                  const plat = PLATAFORMA_CONFIG[f.plataforma] ?? PLATAFORMA_CONFIG.fretebras
                   return (
                     <div key={f.id} className="corridas-card">
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
                         <div style={{ flex: 1, minWidth: 0 }}>
-                          {i === 0 && <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--yellow)', marginBottom: '4px', display: 'block' }}>⭐ MELHOR GANHO</span>}
+                          <div style={{ display: 'flex', gap: '6px', marginBottom: '4px', alignItems: 'center' }}>
+                            {i === 0 && <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--yellow)' }}>⭐ MELHOR GANHO</span>}
+                            <span style={{ fontSize: '10px', fontWeight: 700, color: plat.cor, background: `${plat.cor}18`, border: `1px solid ${plat.cor}44`, borderRadius: '99px', padding: '2px 7px' }}>{plat.label}</span>
+                          </div>
                           <div className="corridas-rota" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{f.origem}</div>
                           <div style={{ fontSize: '13px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>→ {f.destino}</div>
-                          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>{f.km.toLocaleString('pt-BR')} km · {f.tipo_carga} · {((f.peso_kg || 0) / 1000).toFixed(0)}t</div>
+                          <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>{f.km > 0 ? `${f.km.toLocaleString('pt-BR')} km · ` : ''}{f.tipo_carga} · {((f.peso_kg || 0) / 1000).toFixed(0)}t</div>
                         </div>
                         <div style={{ textAlign: 'right', flexShrink: 0 }}>
                           <div className="corridas-ganho">{fmtBRL(f.ganho_est)}</div>
@@ -272,8 +354,8 @@ export default function FretesPage() {
                         <button className={`btn btn-sm ${jaSalvo ? 'btn-primary' : 'btn-ghost'}`} onClick={() => !jaSalvo && salvarFrete(f)} disabled={salvando === f.id || jaSalvo} style={{ whiteSpace: 'nowrap' }}>
                           {salvando === f.id ? '...' : jaSalvo ? '🔖 Salvo' : '🔖 Salvar'}
                         </button>
-                        <button className="btn btn-ghost btn-sm" onClick={() => window.open('https://fretebras.com.br', '_blank')} style={{ whiteSpace: 'nowrap' }}>
-                          Ver no FreteBras →
+                        <button className="btn btn-ghost btn-sm" onClick={() => abrirPlataforma(f.plataforma)} style={{ whiteSpace: 'nowrap' }}>
+                          Ver no {plat.label} →
                         </button>
                       </div>
                     </div>
@@ -281,7 +363,9 @@ export default function FretesPage() {
                 })}
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ fontSize: '12px', color: 'var(--muted)' }}>⚠️ Dados de exemplo — FreteBras em breve</div>
+                <div style={{ fontSize: '12px', color: 'var(--muted)' }}>
+                  {isMock ? '⚠️ Dados de exemplo — configure as credenciais das plataformas' : `✅ ${fretes.length} fretes encontrados`}
+                </div>
                 {limite.pode && <button className="btn btn-ghost btn-sm" onClick={buscarFretes} disabled={buscando}>🔄 Atualizar</button>}
               </div>
             </>
@@ -301,33 +385,40 @@ export default function FretesPage() {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {salvos.map(s => (
-                <div key={s.id} className="corridas-card">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.origem}</div>
-                      <div style={{ fontSize: '13px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>→ {s.destino}</div>
-                      <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
-                        {s.km ? `${s.km.toLocaleString('pt-BR')} km · ` : ''}{s.tipo_carga || 'Carga geral'}{s.peso_kg ? ` · ${(s.peso_kg / 1000).toFixed(0)}t` : ''}
+              {salvos.map(s => {
+                const plat = PLATAFORMA_CONFIG[s.plataforma] ?? PLATAFORMA_CONFIG.fretebras
+                return (
+                  <div key={s.id} className="corridas-card">
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <span style={{ fontSize: '10px', fontWeight: 700, color: plat.cor, background: `${plat.cor}18`, border: `1px solid ${plat.cor}44`, borderRadius: '99px', padding: '2px 7px', display: 'inline-block', marginBottom: '4px' }}>{plat.label}</span>
+                        <div style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{s.origem}</div>
+                        <div style={{ fontSize: '13px', color: 'var(--muted)', whiteSpace: 'nowrap' }}>→ {s.destino}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--muted)', marginTop: '2px' }}>
+                          {s.km ? `${s.km.toLocaleString('pt-BR')} km · ` : ''}{s.tipo_carga || 'Carga geral'}{s.peso_kg ? ` · ${(s.peso_kg / 1000).toFixed(0)}t` : ''}
+                        </div>
+                      </div>
+                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                        <div className="corridas-ganho">{fmtBRL(s.ganho_est || 0)}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--muted)' }}>líquido est.</div>
                       </div>
                     </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div className="corridas-ganho">{fmtBRL(s.ganho_est || 0)}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--muted)' }}>líquido est.</div>
+                    <div style={{ height: '1px', background: 'var(--border)' }} />
+                    <div className="corridas-detail">
+                      <span>💰 Frete: <strong style={{ color: 'var(--text)' }}>{fmtBRL(s.valor_frete)}</strong></span>
+                      {s.custo_diesel_est && <span>⛽ Diesel: <strong style={{ color: 'var(--red)' }}>−{fmtBRL(s.custo_diesel_est)}</strong></span>}
+                      {s.custo_pedagio_est && <span>🛣️ Pedágio: <strong style={{ color: 'var(--red)' }}>−{fmtBRL(s.custo_pedagio_est)}</strong></span>}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--muted)' }}>Salvo em {fmtDate(s.salvo_em.slice(0, 10))}</span>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button className="btn btn-ghost btn-sm" onClick={() => abrirPlataforma(s.plataforma)} style={{ whiteSpace: 'nowrap' }}>Ver →</button>
+                        <button className="btn btn-ghost btn-sm" onClick={() => removerSalvo(s.id)} style={{ color: 'var(--red)', whiteSpace: 'nowrap' }}>🗑️</button>
+                      </div>
                     </div>
                   </div>
-                  <div style={{ height: '1px', background: 'var(--border)' }} />
-                  <div className="corridas-detail">
-                    <span>💰 Frete: <strong style={{ color: 'var(--text)' }}>{fmtBRL(s.valor_frete)}</strong></span>
-                    {s.custo_diesel_est && <span>⛽ Diesel: <strong style={{ color: 'var(--red)' }}>−{fmtBRL(s.custo_diesel_est)}</strong></span>}
-                    {s.custo_pedagio_est && <span>🛣️ Pedágio: <strong style={{ color: 'var(--red)' }}>−{fmtBRL(s.custo_pedagio_est)}</strong></span>}
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontSize: '11px', color: 'var(--muted)' }}>Salvo em {fmtDate(s.salvo_em.slice(0, 10))}</span>
-                    <button className="btn btn-ghost btn-sm" onClick={() => removerSalvo(s.id)} style={{ color: 'var(--red)', whiteSpace: 'nowrap' }}>🗑️ Remover</button>
-                  </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </>

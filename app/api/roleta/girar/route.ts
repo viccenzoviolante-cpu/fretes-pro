@@ -2,16 +2,18 @@ import { createClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
 export const PRIZES = [
-  { id: 'nada',     label: 'Tente novamente', emoji: '🎲', tipo: 'nada',   valor: 0  },
-  { id: 'busca1',   label: '+1 busca',        emoji: '🔍', tipo: 'busca',  valor: 1  },
-  { id: 'roleta2',  label: '+2 roletas',      emoji: '🔄', tipo: 'roleta', valor: 2  },
-  { id: 'busca3',   label: '+3 buscas',       emoji: '🔍🔍',tipo: 'busca', valor: 3  },
-  { id: 'busca5',   label: '+5 buscas',       emoji: '🚀', tipo: 'busca',  valor: 5  },
-  { id: 'busca10',  label: '+10 buscas',      emoji: '⭐', tipo: 'busca',  valor: 10 },
+  { id: 'jackpot', label: '+30 buscas', short: '+30', emoji: '🔥', tipo: 'busca',  valor: 30 },
+  { id: 'grande',  label: '+10 buscas', short: '+10', emoji: '⭐', tipo: 'busca',  valor: 10 },
+  { id: 'bom',     label: '+5 buscas',  short: '+5',  emoji: '🚀', tipo: 'busca',  valor: 5  },
+  { id: 'normal',  label: '+3 buscas',  short: '+3',  emoji: '🔍', tipo: 'busca',  valor: 3  },
+  { id: 'roleta3', label: '+3 roletas', short: '+3🎡', emoji: '🎡', tipo: 'roleta', valor: 3  },
+  { id: 'pequeno', label: '+1 busca',   short: '+1',  emoji: '👆', tipo: 'busca',  valor: 1  },
+  { id: 'mini',    label: '+2 roletas', short: '+2🎲', emoji: '🎲', tipo: 'roleta', valor: 2  },
 ]
 
-const PROBS_STARTER = [35, 30, 15, 13, 6, 1]
-const PROBS_PRO     = [20, 30, 15, 23, 10, 2]
+// Soma = 100 em ambos
+export const PROBS_STARTER = [1, 4, 8, 17, 10, 30, 30]
+export const PROBS_PRO     = [2, 10, 18, 30, 8, 22, 10]
 
 function sortear(probs: number[]) {
   const total = probs.reduce((a, b) => a + b, 0)
@@ -35,15 +37,11 @@ export async function POST() {
     .single()
 
   if (!profile) return NextResponse.json({ error: 'Usuário não encontrado' }, { status: 404 })
-
-  if ((profile.roleta_saldo || 0) <= 0) {
-    return NextResponse.json({ error: 'Sem roletas disponíveis' }, { status: 400 })
-  }
+  if ((profile.roleta_saldo || 0) <= 0) return NextResponse.json({ error: 'Sem roletas disponíveis' }, { status: 400 })
 
   const isPro = profile.plano === 'active'
   const idx = sortear(isPro ? PROBS_PRO : PROBS_STARTER)
   const prize = PRIZES[idx]
-
   const novoSaldo = (profile.roleta_saldo || 0) - 1
 
   type UserUpdate = { roleta_saldo: number; fretes_bonus?: number }
@@ -57,5 +55,5 @@ export async function POST() {
 
   await supabase.from('users').update(updates).eq('id', user.id)
 
-  return NextResponse.json({ prize, prizeIndex: idx, novoSaldo: updates.roleta_saldo })
+  return NextResponse.json({ prize, prizeIndex: idx, novoSaldo: updates.roleta_saldo, isPro })
 }

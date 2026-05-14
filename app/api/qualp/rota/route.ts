@@ -6,7 +6,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const CACHE_DAYS = 7
+const CACHE_DAYS = 21
 
 export async function POST(req: NextRequest) {
   const { origem, destino, eixos = '6' } = await req.json()
