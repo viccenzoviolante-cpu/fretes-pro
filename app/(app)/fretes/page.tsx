@@ -280,7 +280,7 @@ export default function FretesPage() {
               <div style={{ fontSize: '18px', fontWeight: 800, marginBottom: '8px' }}>Limite atingido</div>
               <div style={{ color: 'var(--muted)', fontSize: '14px', maxWidth: '340px', margin: '0 auto 20px', lineHeight: '1.6' }}>{limite.motivo}</div>
               <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <button className="btn btn-primary" onClick={() => router.push('/roleta')}>🎰 Girar a Roleta</button>
+                <button className="btn btn-primary" onClick={() => window.dispatchEvent(new CustomEvent('openRoleta'))}>🎰 Girar a Roleta</button>
                 {!isPro && <button className="btn btn-ghost" onClick={() => router.push('/planos')}>Ver planos →</button>}
               </div>
             </div>

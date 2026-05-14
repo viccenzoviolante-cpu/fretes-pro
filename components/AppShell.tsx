@@ -119,6 +119,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [expiredDismissed, setExpiredDismissed] = useState(false)
   const [roletaOpen, setRoletaOpen] = useState(false)
   const showBanner = isTrial && !isExpired && diasTrial <= 7 && diasTrial > 0 && !bannerDismissed
+
+  // Qualquer página pode abrir o modal via: window.dispatchEvent(new CustomEvent('openRoleta'))
+  useEffect(() => {
+    const handler = () => setRoletaOpen(true)
+    window.addEventListener('openRoleta', handler)
+    return () => window.removeEventListener('openRoleta', handler)
+  }, [])
   const bannerUrgente = diasTrial <= 3
 
   const Avatar = () => (
